@@ -22,6 +22,7 @@ const TARGET_PRESETS = [
 
 export default function MapControls() {
   const { t } = useTranslation()
+  const navMode = useMapStore((s) => s.navMode)
   const layers = useMapStore((s) => s.layers)
   const toggleLayer = useMapStore((s) => s.toggleLayer)
   const mapClickMode = useMapStore((s) => s.mapClickMode)
@@ -37,6 +38,12 @@ export default function MapControls() {
   const { compute } = useRoute()
 
   const [showLayers, setShowLayers] = useState(true)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
+  // In AI mode, hide manual controls completely to keep the view clean
+  if (navMode !== 'manual') {
+    return null
+  }
 
   const handlePresetOrigin = (preset: typeof HARBOR_PRESETS[0]) => {
     setOrigin({ lat: preset.lat, lon: preset.lon })
@@ -56,170 +63,191 @@ export default function MapControls() {
     compute(orig, dest)
   }
 
+  if (isCollapsed) {
+    return (
+      <div className="absolute top-20 left-4 z-[1000]">
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(false)}
+          className="px-3 py-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-cream-300 text-xs font-bold text-charcoal-800 hover:bg-cream-50 flex items-center gap-1.5 cursor-pointer"
+        >
+          <span>Open Manual Controls</span>
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <div className="absolute top-20 left-4 z-[1000] flex flex-col gap-3 max-w-xs">
+    <div className="absolute top-20 left-4 z-[1000] flex flex-col gap-3 max-w-xs max-h-[calc(100vh-100px)] overflow-y-auto pr-1">
       {/* Route Planner Card */}
       <motion.div
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        className="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-cream-300 p-4 w-80"
+        className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-cream-300 p-4 w-80"
       >
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold font-sans text-charcoal-900 flex items-center gap-1.5">
             Marine Route Planner
           </h3>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleQuickDemo}
+              className="text-[10px] bg-terracotta-50 text-terracotta-600 hover:bg-terracotta-100 font-bold px-2 py-0.5 rounded border border-terracotta-200 transition-colors"
+              title="1-Click demo: Kochi port to high-yield PFZ zone"
+            >
+              Quick Demo
+            </button>
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className="p-1 rounded text-charcoal-400 hover:text-charcoal-700 hover:bg-cream-100 transition-colors cursor-pointer"
+              title="Collapse controls"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M2 6h8" />
+              </svg>
+            </button>
+          </div>
+          x``        {/* Origin Input */}
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                Origin (Harbor)
+              </label>
+              <button
+                onClick={() => setMapClickMode(mapClickMode === 'set_origin' ? 'none' : 'set_origin')}
+                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors ${mapClickMode === 'set_origin'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-blue-600 hover:bg-blue-50'
+                  }`}
+              >
+                {mapClickMode === 'set_origin' ? 'Cancel Click' : 'Pick on Map'}
+              </button>
+            </div>
+
+            <div className="flex gap-2 mb-1.5">
+              <input
+                type="number"
+                step="0.01"
+                value={origin?.lat ?? ''}
+                onChange={(e) =>
+                  setOrigin({ lat: parseFloat(e.target.value) || 0, lon: origin?.lon || 0 })
+                }
+                placeholder="Lat"
+                className="w-1/2 px-2.5 py-1 text-xs border border-cream-300 rounded-md bg-cream-50 focus:outline-none focus:ring-1 focus:ring-terracotta-500"
+              />
+              <input
+                type="number"
+                step="0.01"
+                value={origin?.lon ?? ''}
+                onChange={(e) =>
+                  setOrigin({ lat: origin?.lat || 0, lon: parseFloat(e.target.value) || 0 })
+                }
+                placeholder="Lon"
+                className="w-1/2 px-2.5 py-1 text-xs border border-cream-300 rounded-md bg-cream-50 focus:outline-none focus:ring-1 focus:ring-terracotta-500"
+              />
+            </div>
+
+            <select
+              onChange={(e) => {
+                const selected = HARBOR_PRESETS.find((p) => p.name === e.target.value)
+                if (selected) handlePresetOrigin(selected)
+              }}
+              className="w-full text-xs py-1 px-2 border border-cream-300 rounded bg-white text-charcoal-800 focus:outline-none"
+              defaultValue=""
+            >
+              <option value="" disabled>Select Port Preset...</option>
+              {HARBOR_PRESETS.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name} ({p.lat.toFixed(2)}°N, {p.lon.toFixed(2)}°E)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Destination Input */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                Destination Target
+              </label>
+              <button
+                onClick={() => setMapClickMode(mapClickMode === 'set_destination' ? 'none' : 'set_destination')}
+                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors ${mapClickMode === 'set_destination'
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-emerald-600 hover:bg-emerald-50'
+                  }`}
+              >
+                {mapClickMode === 'set_destination' ? 'Cancel Click' : 'Pick on Map'}
+              </button>
+            </div>
+
+            <div className="flex gap-2 mb-1.5">
+              <input
+                type="number"
+                step="0.01"
+                value={destination?.lat ?? ''}
+                onChange={(e) =>
+                  setDestination({
+                    lat: parseFloat(e.target.value) || 0,
+                    lon: destination?.lon || 0,
+                  })
+                }
+                placeholder="Lat"
+                className="w-1/2 px-2.5 py-1 text-xs border border-cream-300 rounded-md bg-cream-50 focus:outline-none focus:ring-1 focus:ring-terracotta-500"
+              />
+              <input
+                type="number"
+                step="0.01"
+                value={destination?.lon ?? ''}
+                onChange={(e) =>
+                  setDestination({
+                    lat: destination?.lat || 0,
+                    lon: parseFloat(e.target.value) || 0,
+                  })
+                }
+                placeholder="Lon"
+                className="w-1/2 px-2.5 py-1 text-xs border border-cream-300 rounded-md bg-cream-50 focus:outline-none focus:ring-1 focus:ring-terracotta-500"
+              />
+            </div>
+
+            <select
+              onChange={(e) => {
+                const selected = TARGET_PRESETS.find((p) => p.name === e.target.value)
+                if (selected) handlePresetTarget(selected)
+              }}
+              className="w-full text-xs py-1 px-2 border border-cream-300 rounded bg-white text-charcoal-800 focus:outline-none"
+              defaultValue=""
+            >
+              <option value="" disabled>Select Target Fishing Spot...</option>
+              {TARGET_PRESETS.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Compute Button */}
           <button
-            onClick={handleQuickDemo}
-            className="text-[10px] bg-terracotta-50 text-terracotta-600 hover:bg-terracotta-100 font-bold px-2 py-0.5 rounded border border-terracotta-200 transition-colors"
-            title="1-Click demo: Kochi port to high-yield PFZ zone"
+            onClick={() => compute()}
+            disabled={computing || !origin || !destination}
+            className="w-full btn-primary justify-center py-2 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
-            Quick Demo
+            {computing ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                Computing Safe Route...
+              </>
+            ) : (
+              'Compute Hazard-Aware Route'
+            )}
           </button>
-        </div>
 
-        {/* Origin Input */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-              Origin (Harbor)
-            </label>
-            <button
-              onClick={() => setMapClickMode(mapClickMode === 'set_origin' ? 'none' : 'set_origin')}
-              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors ${
-                mapClickMode === 'set_origin'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-              {mapClickMode === 'set_origin' ? 'Cancel Click' : 'Pick on Map'}
-            </button>
-          </div>
-
-          <div className="flex gap-2 mb-1.5">
-            <input
-              type="number"
-              step="0.01"
-              value={origin?.lat ?? ''}
-              onChange={(e) =>
-                setOrigin({ lat: parseFloat(e.target.value) || 0, lon: origin?.lon || 0 })
-              }
-              placeholder="Lat"
-              className="w-1/2 px-2.5 py-1 text-xs border border-cream-300 rounded-md bg-cream-50 focus:outline-none focus:ring-1 focus:ring-terracotta-500"
-            />
-            <input
-              type="number"
-              step="0.01"
-              value={origin?.lon ?? ''}
-              onChange={(e) =>
-                setOrigin({ lat: origin?.lat || 0, lon: parseFloat(e.target.value) || 0 })
-              }
-              placeholder="Lon"
-              className="w-1/2 px-2.5 py-1 text-xs border border-cream-300 rounded-md bg-cream-50 focus:outline-none focus:ring-1 focus:ring-terracotta-500"
-            />
-          </div>
-
-          <select
-            onChange={(e) => {
-              const selected = HARBOR_PRESETS.find((p) => p.name === e.target.value)
-              if (selected) handlePresetOrigin(selected)
-            }}
-            className="w-full text-xs py-1 px-2 border border-cream-300 rounded bg-white text-charcoal-800 focus:outline-none"
-            defaultValue=""
-          >
-            <option value="" disabled>Select Port Preset...</option>
-            {HARBOR_PRESETS.map((p) => (
-              <option key={p.name} value={p.name}>
-                {p.name} ({p.lat.toFixed(2)}°N, {p.lon.toFixed(2)}°E)
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Destination Input */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-              Destination Target
-            </label>
-            <button
-              onClick={() => setMapClickMode(mapClickMode === 'set_destination' ? 'none' : 'set_destination')}
-              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded transition-colors ${
-                mapClickMode === 'set_destination'
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-emerald-600 hover:bg-emerald-50'
-              }`}
-            >
-              {mapClickMode === 'set_destination' ? 'Cancel Click' : 'Pick on Map'}
-            </button>
-          </div>
-
-          <div className="flex gap-2 mb-1.5">
-            <input
-              type="number"
-              step="0.01"
-              value={destination?.lat ?? ''}
-              onChange={(e) =>
-                setDestination({
-                  lat: parseFloat(e.target.value) || 0,
-                  lon: destination?.lon || 0,
-                })
-              }
-              placeholder="Lat"
-              className="w-1/2 px-2.5 py-1 text-xs border border-cream-300 rounded-md bg-cream-50 focus:outline-none focus:ring-1 focus:ring-terracotta-500"
-            />
-            <input
-              type="number"
-              step="0.01"
-              value={destination?.lon ?? ''}
-              onChange={(e) =>
-                setDestination({
-                  lat: destination?.lat || 0,
-                  lon: parseFloat(e.target.value) || 0,
-                })
-              }
-              placeholder="Lon"
-              className="w-1/2 px-2.5 py-1 text-xs border border-cream-300 rounded-md bg-cream-50 focus:outline-none focus:ring-1 focus:ring-terracotta-500"
-            />
-          </div>
-
-          <select
-            onChange={(e) => {
-              const selected = TARGET_PRESETS.find((p) => p.name === e.target.value)
-              if (selected) handlePresetTarget(selected)
-            }}
-            className="w-full text-xs py-1 px-2 border border-cream-300 rounded bg-white text-charcoal-800 focus:outline-none"
-            defaultValue=""
-          >
-            <option value="" disabled>Select Target Fishing Spot...</option>
-            {TARGET_PRESETS.map((p) => (
-              <option key={p.name} value={p.name}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Compute Button */}
-        <button
-          onClick={() => compute()}
-          disabled={computing || !origin || !destination}
-          className="w-full btn-primary justify-center py-2 text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-        >
-          {computing ? (
-            <>
-              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              Computing Safe Route...
-            </>
-          ) : (
-            'Compute Hazard-Aware Route'
+          {error && (
+            <p className="text-xs text-red-600 mt-2 bg-red-50 p-1.5 rounded border border-red-200">
+              {error}
+            </p>
           )}
-        </button>
-
-        {error && (
-          <p className="text-xs text-red-600 mt-2 bg-red-50 p-1.5 rounded border border-red-200">
-            {error}
-          </p>
-        )}
       </motion.div>
 
       {/* Layer Visibility Control */}
