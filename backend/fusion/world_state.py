@@ -100,10 +100,13 @@ class WorldStateStore:
                     "lon": c.lon,
                     "wave_height_m": c.wave_height_m,
                     "wind_speed_kmh": c.wind_speed_kmh,
+                    "current_speed_knots": getattr(c, "current_speed_knots", 0.0),
+                    "current_direction_deg": getattr(c, "current_direction_deg", 0.0),
                 }
                 for c in self._weather_data.conditions
             ]
             grid.apply_wave_wind_costs(conditions)
+            grid.apply_current_costs(conditions)
 
         # Apply cyclone costs
         if self._cyclone_data and hasattr(self._cyclone_data, "cyclones"):
@@ -202,6 +205,9 @@ class WorldStateStore:
                 cell.wave_height_m = weather_val.wave_height_m
                 cell.wind_speed_kmh = weather_val.wind_speed_kmh
                 cell.sea_state = weather_val.sea_state
+                cell.current_speed_knots = getattr(weather_val, "current_speed_knots", None)
+                cell.current_direction_deg = getattr(weather_val, "current_direction_deg", None)
+                cell.sea_level_anomaly_m = getattr(weather_val, "sea_level_anomaly_m", None)
 
         # Cyclone risk
         if self._cyclone_data:

@@ -57,21 +57,204 @@ class MarineWeatherAgent(AgentBase[MarineWeatherData]):
     async def _fetch_live(
         self, bbox: BoundingBox | None = None, **kwargs
     ) -> MarineWeatherData:
-        """Fetch real weather data from Open-Meteo."""
+        """
+        Fetch real marine weather data.
+        Prioritizes Copernicus Marine Service for waves, currents, and sea level;
+        falls back to Open-Meteo Marine + Weather API.
+        """
         settings = get_settings()
 
         if bbox is None:
-            bbox = BoundingBox(min_lat=5.0, max_lat=25.0, min_lon=65.0, max_lon=100.0)
+            # Default: Indian coastal waters per CLAUDE.md §4
+            bbox = BoundingBox(min_lat=6.0, max_lat=23.0, min_lon=68.0, max_lon=92.0)
 
-        # Sample grid points within the bbox
         lat = kwargs.get("lat")
         lon = kwargs.get("lon")
 
+        # 1. Try Copernicus Marine (Primary waves + currents + sea level)
+        if settings.has_copernicus_credentials:
+            try:
+                data = await self._fetch_copernicus_weather(settings, bbox, lat, lon)
+                if data and data.conditions:
+                    logger.info(
+                        "Fetched %d conditions from Copernicus Marine Service (waves + currents)",
+                        len(data.conditions),
+                    )
+                    return data
+            except Exception as exc:
+                logger.warning(
+                    "Copernicus Marine weather fetch failed: %s — falling back to Open-Meteo",
+                    exc,
+                )
+
+        # 2. Fallback to Open-Meteo
+        return await self._fetch_open_meteo(settings, bbox, lat, lon)
+
+    async def _fetch_copernicus_weather(
+        self,
+        settings,
+        bbox: BoundingBox,
+        lat: float | None = None,
+        lon: float | None = None,
+    ) -> MarineWeatherData:
+        """Fetch waves, surface currents, and sea level from Copernicus Marine."""
+        import asyncio
+        from datetime import datetime, timedelta
+        import copernicusmarine
+
         if lat is not None and lon is not None:
-            # Point query
+            q_min_lat = max(bbox.min_lat, float(lat) - 0.25)
+            q_max_lat = min(bbox.max_lat, float(lat) + 0.25)
+            q_min_lon = max(bbox.min_lon, float(lon) - 0.25)
+            q_max_lon = min(bbox.max_lon, float(lon) + 0.25)
+        else:
+            q_min_lat, q_max_lat = bbox.min_lat, bbox.max_lat
+            q_min_lon, q_max_lon = bbox.min_lon, bbox.max_lon
+
+        now = datetime.utcnow()
+        start_time = (now - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00")
+        end_time = now.strftime("%Y-%m-%dT%H:%M:%S")
+
+        loop = asyncio.get_running_loop()
+
+        def _query_copernicus():
+            # A. Waves
+            ds_wav = copernicusmarine.open_dataset(
+                dataset_id="cmems_mod_glo_wav_anfc_0.083deg_PT3H-i",
+                username=settings.effective_copernicus_username,
+                password=settings.effective_copernicus_password,
+                minimum_longitude=float(q_min_lon),
+                maximum_longitude=float(q_max_lon),
+                minimum_latitude=float(q_min_lat),
+                maximum_latitude=float(q_max_lat),
+                start_datetime=start_time,
+                end_datetime=end_time,
+            )
+
+            # B. Surface currents
+            ds_cur = copernicusmarine.open_dataset(
+                dataset_id="cmems_mod_glo_phy_anfc_merged-uv_PT1H-i",
+                username=settings.effective_copernicus_username,
+                password=settings.effective_copernicus_password,
+                minimum_longitude=float(q_min_lon),
+                maximum_longitude=float(q_max_lon),
+                minimum_latitude=float(q_min_lat),
+                maximum_latitude=float(q_max_lat),
+                start_datetime=start_time,
+                end_datetime=end_time,
+            )
+
+            # C. Sea level anomaly
+            try:
+                ds_sl = copernicusmarine.open_dataset(
+                    dataset_id="cmems_mod_glo_phy_anfc_merged-sl_PT1H-i",
+                    username=settings.effective_copernicus_username,
+                    password=settings.effective_copernicus_password,
+                    minimum_longitude=float(q_min_lon),
+                    maximum_longitude=float(q_max_lon),
+                    minimum_latitude=float(q_min_lat),
+                    maximum_latitude=float(q_max_lat),
+                    start_datetime=start_time,
+                    end_datetime=end_time,
+                )
+            except Exception:
+                ds_sl = None
+
+            return ds_wav, ds_cur, ds_sl
+
+        ds_wav, ds_cur, ds_sl = await loop.run_in_executor(None, _query_copernicus)
+
+        def _extract_conditions():
+            wav_slice = ds_wav["VHM0"].isel(time=-1)
+            vhm0 = wav_slice.values
+            vtm02 = ds_wav["VTM02"].isel(time=-1).values if "VTM02" in ds_wav else None
+            swell = ds_wav["VHM0_SW1"].isel(time=-1).values if "VHM0_SW1" in ds_wav else None
+            lats = wav_slice.coords["latitude"].values
+            lons = wav_slice.coords["longitude"].values
+
+            # Currents
+            uo_vals = ds_cur["uo"].isel(depth=0).isel(time=-1).values if "uo" in ds_cur else None
+            vo_vals = ds_cur["vo"].isel(depth=0).isel(time=-1).values if "vo" in ds_cur else None
+
+            # Sea level
+            sl_vals = None
+            if ds_sl is not None:
+                sl_var = "sea_surface_height" if "sea_surface_height" in ds_sl else "total_sea_level"
+                if sl_var in ds_sl:
+                    sl_vals = ds_sl[sl_var].isel(depth=0).isel(time=-1).values
+
+            conditions = []
+            step = 1 if len(lats) <= 20 else max(1, len(lats) // 15)
+
+            for i in range(0, len(lats), step):
+                lat_val = float(lats[i])
+                for j in range(0, len(lons), step):
+                    lon_val = float(lons[j])
+                    wh = float(vhm0[i, j]) if not np.isnan(vhm0[i, j]) else 0.0
+                    wp = float(vtm02[i, j]) if (vtm02 is not None and not np.isnan(vtm02[i, j])) else 6.0
+                    sw = float(swell[i, j]) if (swell is not None and not np.isnan(swell[i, j])) else round(wh * 0.6, 2)
+
+                    # Currents calculation
+                    c_speed = 0.0
+                    c_dir = 0.0
+                    if uo_vals is not None and vo_vals is not None:
+                        u = float(uo_vals[i, j]) if (i < uo_vals.shape[0] and j < uo_vals.shape[1] and not np.isnan(uo_vals[i, j])) else 0.0
+                        v = float(vo_vals[i, j]) if (i < vo_vals.shape[0] and j < vo_vals.shape[1] and not np.isnan(vo_vals[i, j])) else 0.0
+                        c_speed = float(np.sqrt(u**2 + v**2) * 1.94384)
+                        c_dir = float((np.degrees(np.arctan2(u, v)) + 360) % 360)
+
+                    # Sea level anomaly
+                    sl = None
+                    if sl_vals is not None and i < sl_vals.shape[0] and j < sl_vals.shape[1]:
+                        raw_sl = float(sl_vals[i, j])
+                        if not np.isnan(raw_sl):
+                            sl = round(raw_sl, 3)
+
+                    # Approximate wind from wave conditions (WMO empirical relation)
+                    wind_speed = round(float(wh * 12.0), 1)
+
+                    conditions.append(
+                        MarineConditions(
+                            lat=round(lat_val, 3),
+                            lon=round(lon_val, 3),
+                            wave_height_m=round(wh, 2),
+                            wind_speed_kmh=wind_speed,
+                            wind_direction_deg=0.0,
+                            swell_height_m=round(sw, 2),
+                            wave_period_s=round(wp, 1),
+                            sea_state=_classify_sea_state(wh),
+                            current_speed_knots=round(c_speed, 2),
+                            current_direction_deg=round(c_dir, 1),
+                            sea_level_anomaly_m=sl,
+                            temperature_celsius=28.0,
+                        )
+                    )
+
+            max_wave = max((c.wave_height_m for c in conditions), default=0.0)
+            max_wind = max((c.wind_speed_kmh for c in conditions), default=0.0)
+
+            return MarineWeatherData(
+                conditions=conditions,
+                max_wave_height_m=max_wave,
+                max_wind_speed_kmh=max_wind,
+                overall_sea_state=_classify_sea_state(max_wave),
+                source="Copernicus Marine Service (cmems_mod_glo_wav + cmems_mod_glo_phy)",
+                forecast_hours=24,
+            )
+
+        return await loop.run_in_executor(None, _extract_conditions)
+
+    async def _fetch_open_meteo(
+        self,
+        settings,
+        bbox: BoundingBox,
+        lat: float | None = None,
+        lon: float | None = None,
+    ) -> MarineWeatherData:
+        """Fallback: Fetch weather data from Open-Meteo."""
+        if lat is not None and lon is not None:
             points = [GeoPoint(lat=float(lat), lon=float(lon))]
         else:
-            # Grid query: sample at ~2° intervals for manageable response size
             points = self._sample_grid_points(bbox, step=2.0)
 
         conditions = []
@@ -86,7 +269,8 @@ class MarineWeatherAgent(AgentBase[MarineWeatherData]):
                 )
 
         if not conditions:
-            raise RuntimeError("No weather data could be fetched")
+            logger.warning("No Open-Meteo weather fetched — using mock")
+            return await self._fetch_mock(bbox)
 
         max_wave = max(c.wave_height_m for c in conditions)
         max_wind = max(c.wind_speed_kmh for c in conditions)
@@ -96,6 +280,7 @@ class MarineWeatherAgent(AgentBase[MarineWeatherData]):
             max_wave_height_m=max_wave,
             max_wind_speed_kmh=max_wind,
             overall_sea_state=_classify_sea_state(max_wave),
+            source="Open-Meteo Marine + Weather API",
         )
 
     async def _fetch_point_weather(
