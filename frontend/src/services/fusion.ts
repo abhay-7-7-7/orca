@@ -1,6 +1,6 @@
 import { apiFetch } from './api'
 
-/* ---------- Types ---------- */
+/* ---------- Types (frontend-facing) ---------- */
 
 export interface WorldStateCell {
   lat: number
@@ -140,47 +140,11 @@ export async function getWorldState(params: {
     max_lon: String(params.max_lon),
     resolution: String(params.resolution || 0.4),
   })
-
-  try {
-    const raw = await apiFetch<any>(`/api/fusion/world-state?${qs}`)
-    if (raw && Array.isArray(raw.cells) && raw.cells.length > 0) {
-      return {
-        ...raw,
-        cells: raw.cells.map(normalizeCell),
-      }
-    }
-  } catch (err) {
-    // Backend offline or initializing
-  }
-
-  // Graceful fallback with realistic Arabian Sea oceanographic data
-  const fallbackCells = generateRealisticMarineGrid(params)
-  return {
-    cells: fallbackCells,
-    resolution: params.resolution || 0.4,
-    bounds: params,
-    timestamp: new Date().toISOString(),
-  }
+  return apiFetch(`/api/fusion/world-state?${qs}`)
 }
 
 export async function getFusionCell(lat: number, lon: number): Promise<WorldStateCell> {
-  try {
-    const raw = await apiFetch<any>(`/api/fusion/cell?lat=${lat}&lon=${lon}`)
-    return normalizeCell(raw)
-  } catch {
-    return {
-      lat,
-      lon,
-      sst: 28.6,
-      chlorophyll: 1.2,
-      wave_height: 1.5,
-      wind_speed: 22,
-      wind_direction: 245,
-      hazard_cost: 0.2,
-      in_eez: true,
-      in_mpa: false,
-    }
-  }
+  return apiFetch(`/api/fusion/cell?lat=${lat}&lon=${lon}`)
 }
 
 export async function getFusionStatus(): Promise<FusionStatus> {

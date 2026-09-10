@@ -28,7 +28,7 @@ def _setup_logging() -> None:
     level = logging.DEBUG if settings.debug else logging.INFO
 
     formatter = logging.Formatter(
-        fmt="%(asctime)s │ %(levelname)-8s │ %(name)-30s │ %(message)s",
+        fmt="%(asctime)s | %(levelname)-8s | %(name)-30s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 

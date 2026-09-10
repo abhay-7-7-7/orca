@@ -1,7 +1,7 @@
 import { apiFetch, apiPost } from './api'
 import type { PointCoord } from './agents'
 
-/* ---------- Types ---------- */
+/* ---------- Types (frontend-facing) ---------- */
 
 export interface RouteWaypoint {
   lat: number
@@ -149,55 +149,11 @@ export async function computeRoute(
   origin: PointCoord,
   destination: PointCoord
 ): Promise<ComputedRoute> {
-  try {
-    const raw = await apiPost<any>('/api/routing/compute', { origin, destination })
-    if (raw) {
-      // Normalize backend RouteResponse to frontend ComputedRoute
-      const rawWaypoints = Array.isArray(raw.waypoints) ? raw.waypoints : []
-      const path: [number, number][] =
-        rawWaypoints.length > 0
-          ? rawWaypoints.map((w: any) => [w.lat, w.lon] as [number, number])
-          : [[origin.lat, origin.lon], [destination.lat, destination.lon]]
-
-      return {
-        id: raw.route_id || raw.id || `route-${Date.now()}`,
-        origin: raw.origin || origin,
-        destination: raw.destination || destination,
-        waypoints: rawWaypoints.map((w: any) => ({
-          lat: w.lat,
-          lon: w.lon,
-          hazard_cost: w.cost ?? 0.2,
-          wave_height: w.wave_height_m ?? 1.3,
-          wind_speed: w.wind_speed_kmh ?? 20,
-        })),
-        path,
-        total_distance_km: raw.total_distance_km ?? haversineKm(origin.lat, origin.lon, destination.lat, destination.lon),
-        estimated_time_hours: raw.estimated_time_hours ?? 2.5,
-        average_hazard_cost: raw.total_cost ? Math.min(1, raw.total_cost / 10) : 0.2,
-        max_hazard_cost: raw.hazard_summary?.max_wave_height_m > 2.5 ? 0.7 : 0.3,
-        hazards_along_path: (raw.warnings || []).map((w: string) => ({
-          type: 'Marine Advisory',
-          location: origin,
-          severity: 'medium',
-          description: w,
-        })),
-        geofence_violations: raw.warnings || [],
-        created_at: new Date().toISOString(),
-      }
-    }
-  } catch (err) {
-    // Backend offline or route compute failed -> Use high-accuracy fallback calculation
-  }
-
-  return calculateFallbackRoute(origin, destination)
+  return apiPost('/api/routing/compute', { origin, destination })
 }
 
 export async function checkReroute(routeId: string): Promise<RerouteCheck> {
-  try {
-    return await apiPost('/api/routing/reroute-check', { route_id: routeId })
-  } catch {
-    return { needs_reroute: false }
-  }
+  return apiPost('/api/routing/reroute-check', { route_id: routeId })
 }
 
 export async function getRouteStatus(id: string): Promise<RouteStatus> {
