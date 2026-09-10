@@ -5,6 +5,7 @@ import {
   DistressStatusUpdatePayload,
   RescueAsset,
 } from '../types/sos'
+import { insertSupabaseSOSAlert } from './supabase'
 
 const STORAGE_KEY = 'orca_distress_signals_v1'
 
@@ -299,6 +300,21 @@ export async function fetchRescueAssets(): Promise<RescueAsset[]> {
 export async function triggerDistressSignal(
   payload: DistressCreatePayload
 ): Promise<DistressSignal> {
+  // Asynchronously record alert to Supabase
+  insertSupabaseSOSAlert({
+    vessel_name: payload.vessel_name,
+    registration_no: payload.registration_no,
+    skipper_name: payload.skipper_name,
+    contact_phone: payload.contact_phone,
+    crew_count: payload.crew_count,
+    lat: payload.lat,
+    lon: payload.lon,
+    distress_type: payload.distress_type,
+    severity: payload.severity,
+    emergency_message: payload.emergency_message,
+    nearest_port: payload.nearest_port,
+  }).catch((err) => console.warn('Supabase SOS alert sync failed:', err))
+
   try {
     const created = await apiPost<DistressSignal>('/api/sos/signal', payload)
     if (created && created.id) {
@@ -309,6 +325,7 @@ export async function triggerDistressSignal(
   } catch (err) {
     console.warn('Backend create distress failed, creating locally:', err)
   }
+
 
   const now = new Date().toISOString()
   const localSignal: DistressSignal = {
