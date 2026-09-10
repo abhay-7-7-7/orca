@@ -13,6 +13,7 @@ interface ChatState {
   messages: ChatMessage[]
   addMessage: (message: ChatMessage) => void
   setMessages: (messages: ChatMessage[]) => void
+  clearMessages: () => void
 
   /* Session */
   sessionId: string
@@ -44,6 +45,7 @@ export const useChatStore = create<ChatState>((set) => ({
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
   setMessages: (messages) => set({ messages }),
+  clearMessages: () => set({ messages: [], contextChips: [] }),
 
   sessionId: `orca-${Date.now()}`,
   setSessionId: (id) => set({ sessionId: id }),

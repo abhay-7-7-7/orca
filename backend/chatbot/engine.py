@@ -51,6 +51,7 @@ async def chat(
     message: str,
     session_id: str = "default",
     location: dict | None = None,
+    target_language: str = "en",
 ) -> ChatResponse:
     """
     Process a chat message through the LLM with tool calling.
@@ -60,8 +61,7 @@ async def chat(
     settings = get_settings()
 
     # Get or create session
-    if session_id not in _sessions:
-        _sessions[session_id] = []
+    _sessions.setdefault(session_id, [])
 
     # Add user message to history
     _sessions[session_id].append(
@@ -76,7 +76,9 @@ async def chat(
     if settings.llm_api_key:
         if settings.llm_provider == "mistral":
             try:
-                response = await _chat_with_mistral(message, session_id, location)
+                response = await _chat_with_mistral(
+                    message, session_id, location, target_language=target_language
+                )
                 return response
             except Exception as exc:
                 logger.error("Mistral LLM chat failed: %s — falling back to rule-based", exc)
@@ -96,6 +98,7 @@ async def _chat_with_mistral(
     message: str,
     session_id: str,
     location: dict | None,
+    target_language: str = "en",
 ) -> ChatResponse:
     """Use Mistral AI for tool-calling chat."""
     from backend.core.http_client import get_http_client
@@ -109,9 +112,36 @@ async def _chat_with_mistral(
         "Authorization": f"Bearer {settings.llm_api_key}",
     }
 
+    # Language instruction
+    lang_names = {
+        "ml": "Malayalam (മലയാളം)",
+        "ta": "Tamil (தமிழ்)",
+        "hi": "Hindi (हिन्दी)",
+        "te": "Telugu (తెలుగు)",
+        "kn": "Kannada (ಕನ್ನಡ)",
+        "bn": "Bengali (বাংলা)",
+        "gu": "Gujarati (ગુજરાતી)",
+        "mr": "Marathi (मराठी)",
+        "or": "Odia (ଓଡ଼ିଆ)",
+    }
+    lang_label = lang_names.get(target_language, target_language)
+
+    system_text = SYSTEM_PROMPT
+    if target_language and target_language != "en":
+        system_text += (
+            f"\n\nCRITICAL LANGUAGE & FORMATTING INSTRUCTION:\n"
+            f"The user is asking in {lang_label}. You MUST write your entire final advisory response "
+            f"directly in natural, fluent {lang_label}.\n"
+            f"Always use clean, standard Markdown syntax:\n"
+            f"- Use ### for main section headings (always on their own line with a blank line before and after).\n"
+            f"- Use **bold** for key numbers, temperatures, wave heights, and safety recommendations. Never put spaces inside asterisks.\n"
+            f"- Use clean bullet points with - on new lines.\n"
+            f"- Use Markdown tables with clean pipes (|) and standard headers.\n"
+        )
+
     # Build messages (keep last 10 turns for context)
-    history = _sessions.get(session_id, [])[-10:]
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    history = _sessions.setdefault(session_id, [])[-10:]
+    messages = [{"role": "system", "content": system_text}]
     for m in history:
         messages.append({"role": m.role, "content": m.content})
 
@@ -195,7 +225,7 @@ async def _chat_with_mistral(
         reply = "I've gathered the data. Let me summarize what I found."
 
     # Store assistant response in history
-    _sessions[session_id].append(
+    _sessions.setdefault(session_id, []).append(
         ChatMessage(
             role="assistant",
             content=reply,

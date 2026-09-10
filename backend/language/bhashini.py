@@ -298,3 +298,51 @@ def _heuristic_detect(text: str) -> LanguageDetectionResult:
         language_name="English",
         confidence=0.5,
     )
+
+
+# ── Markdown formatting repair for translated text ───────────────────
+
+def clean_markdown(text: str) -> str:
+    """
+    Repair broken markdown syntax caused by Machine Translation pipelines
+    (such as IndicTrans-v2 inserting spaces into asterisks, mangling headers,
+    or compressing newlines).
+    """
+    if not text:
+        return ""
+
+    import re
+
+    t = text
+
+    # 1. Normalize spaced asterisks: * * -> ** and collapse quadruple asterisks
+    t = re.sub(r"\*\s+\*", "**", t)
+    t = re.sub(r"\*{3,}", "**", t)
+
+    # 2. Fix broken dividers and section headers like :---.# * 1. or ---.# * 2.
+    t = re.sub(r"[:\s]*---+\s*\.?\s*#\s*\*+\s*(\d+)\.?", r"\n\n---\n\n### \1. ", t)
+    t = re.sub(r"[:\s]*---+\s*\.?\s*#\s*\*+", r"\n\n---\n\n### ", t)
+    t = re.sub(r"\n?#\s*\*+\s*", r"\n\n### ", t)
+    t = re.sub(r"###\s*\*+\s*", r"### ", t)
+
+    # 3. Fix list items and sub-bullet points concatenated on same line
+    t = re.sub(r"\s*-\s*\*\s*", r"\n- **", t)
+    t = re.sub(r"(?<=[.!?])\s*(-\s+|\d+\.\s+)", r"\n\n\1", t)
+    t = re.sub(r"(?<=[.!?])\s*(###\s+)", r"\n\n\1", t)
+
+    # 4. Clean up broken double asterisks around colons
+    t = re.sub(r"\*\*\s*:\s*\*\*", ": **", t)
+    t = re.sub(r"(\*\*)\s*:\s*", r"\1: ", t)
+    t = re.sub(r":\s*\*\*\s*", ": **", t)
+
+    # 5. Fix tables
+    t = re.sub(r"\|\s*-+[\s\-]*-\s*\|", r"\n| --- | --- | --- | --- |\n", t)
+    t = re.sub(r"\|\s*\*\*\s*", "| **", t)
+    t = re.sub(r"\s*\*\*\s*\|", "** |", t)
+
+    # 6. Ensure headings have clean line spacing
+    t = re.sub(r"([^\n])\s*(###\s+)", r"\1\n\n\2", t)
+    t = re.sub(r"([^\n])\s*(---\s*)", r"\1\n\n\2\n\n", t)
+
+    return t.strip()
+

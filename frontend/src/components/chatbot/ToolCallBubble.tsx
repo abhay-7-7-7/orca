@@ -86,6 +86,16 @@ function getToolMetadata(toolName: string): ToolMeta {
       bgColor: 'bg-teal-50/60',
     }
   }
+  if (name.includes('tide')) {
+    return {
+      label: 'Tide & Sea Level Forecast',
+      icon: Waves,
+      categoryColor: 'text-cyan-700',
+      badgeColor: 'bg-cyan-100 text-cyan-800',
+      borderColor: 'border-cyan-200',
+      bgColor: 'bg-cyan-50/60',
+    }
+  }
   if (name.includes('route') || name.includes('routing')) {
     return {
       label: 'A* Nautical Route Engine',
@@ -97,7 +107,10 @@ function getToolMetadata(toolName: string): ToolMeta {
     }
   }
   return {
-    label: toolName.replace(/_/g, ' '),
+    label: toolName
+      .replace(/^(get_|check_)/, '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase()),
     icon: Cpu,
     categoryColor: 'text-slate-700',
     badgeColor: 'bg-slate-100 text-slate-800',
@@ -107,12 +120,27 @@ function getToolMetadata(toolName: string): ToolMeta {
 }
 
 function formatKey(key: string): string {
+  const customMap: Record<string, string> = {
+    wind_speed_kmh: 'Wind Speed (km/h)',
+    wave_height_m: 'Wave Height (m)',
+    sst_celsius: 'Sea Temp (°C)',
+    in_indian_eez: 'Indian EEZ',
+    nearest_boundary_km: 'Boundary Dist (km)',
+    depth_m: 'Depth (m)',
+    total_alerts: 'Active Alerts',
+    cyclone_risk: 'Cyclone Risk',
+    lightning_risk: 'Lightning Risk',
+    sea_state: 'Sea State',
+    is_safe: 'Safe Navigable',
+    candidates: 'PFZ Candidates',
+    total: 'Total Zones',
+    current_height_m: 'Tide Level (m)',
+    station: 'Tide Station',
+  }
+  if (customMap[key]) return customMap[key]
   return key
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
-    .replace('Km', ' (km)')
-    .replace('Kmh', ' (km/h)')
-    .replace(' M', ' (m)')
 }
 
 function formatVal(val: unknown): string {
