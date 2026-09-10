@@ -106,6 +106,51 @@ class HazardGrid:
             self.wind_cost[i, j] = wi_cost
             self.cost_grid[i, j] += w_cost + wi_cost
 
+    def apply_current_costs(
+        self,
+        conditions: list[dict],
+        vessel_heading_deg: float = 0.0,
+        weight: float = 1.5,
+    ) -> None:
+        """
+        Apply surface current traversal costs.
+
+        Source: Copernicus Marine Service (cmems_mod_glo_phy_anfc_merged-uv_PT1H-i).
+
+        Cost Formula (flagged per CLAUDE.md & implementation plan):
+        - Opposing current: penalty = weight * (speed_knots / 1.5) * |cos(delta_theta)|
+          (A 2.0 knot head-current adds +2.0 to traversal cost, comparable to moderate 2.5m waves)
+        - Following current: slight speed bonus (up to -0.3 cost discount)
+        - Cross current: drift penalty (0.3 * weight * speed_knots / 1.5)
+        """
+        for cond in conditions:
+            lat, lon = cond.get("lat", 0), cond.get("lon", 0)
+            i, j = self.lat_to_idx(lat), self.lon_to_idx(lon)
+
+            speed_knots = float(cond.get("current_speed_knots", 0.0) or 0.0)
+            dir_deg = float(cond.get("current_direction_deg", 0.0) or 0.0)
+
+            self.current_speed_grid[i, j] = speed_knots
+            self.current_dir_grid[i, j] = dir_deg
+
+            if speed_knots > 0.3:
+                delta_rad = math.radians(vessel_heading_deg - dir_deg)
+                cos_delta = math.cos(delta_rad)
+                speed_ratio = speed_knots / 1.5
+
+                if cos_delta < -0.2:
+                    # Head-current (opposing)
+                    c_cost = weight * speed_ratio * abs(cos_delta)
+                elif cos_delta > 0.3:
+                    # Tail-current (following) — slight speed/fuel advantage
+                    c_cost = -min(0.3, 0.2 * weight * speed_ratio * cos_delta)
+                else:
+                    # Cross-current — drift turbulence penalty
+                    c_cost = 0.3 * weight * speed_ratio
+
+                self.current_cost[i, j] = max(0.0, c_cost)
+                self.cost_grid[i, j] = max(0.1, self.cost_grid[i, j] + c_cost)
+
     def apply_cyclone_costs(
         self,
         cyclones: list[dict],
@@ -199,6 +244,7 @@ class HazardGrid:
             "base": 1.0,
             "wave": float(self.wave_cost[i, j]),
             "wind": float(self.wind_cost[i, j]),
+            "current": float(self.current_cost[i, j]),
             "cyclone": float(self.cyclone_cost[i, j]),
             "lightning": float(self.lightning_cost[i, j]),
             "geofence": float(self.geofence_cost[i, j]),
