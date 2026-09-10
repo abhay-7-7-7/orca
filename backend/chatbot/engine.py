@@ -124,25 +124,57 @@ Any storm alerts today?
 
 
 def _extract_followups(reply: str) -> tuple[str, list[str]]:
-    """Extract follow-up suggestions from [FOLLOWUPS]...[/FOLLOWUPS] block.
-    
+    """Extract follow-up suggestions from [FOLLOWUPS]... block.
+
+    Handles unclosed tags, bullet points, numbered items, or inline sentences.
+    Guarantees that [FOLLOWUPS] is never displayed in the clean reply text.
     Returns (clean_reply, followups_list).
     """
-    pattern = r'\[FOLLOWUPS\](.*?)\[/FOLLOWUPS\]'
+    if not reply:
+        return "", []
+
+    # Match [FOLLOWUPS] until [/FOLLOWUPS] or until end of message
+    pattern = r'\[FOLLOWUPS\](.*?)(?:\[/FOLLOWUPS\]|$)'
     match = re.search(pattern, reply, re.DOTALL | re.IGNORECASE)
-    
-    if not match:
-        return reply.strip(), []
-    
-    # Extract the followups
-    raw = match.group(1).strip()
-    followups = [line.strip().lstrip('- ').strip() for line in raw.split('\n') if line.strip()]
-    followups = [f for f in followups if len(f) > 2][:3]  # Max 3
-    
-    # Remove the block from the visible reply
-    clean = re.sub(pattern, '', reply, flags=re.DOTALL | re.IGNORECASE).strip()
-    
-    return clean, followups
+
+    clean_reply = re.sub(pattern, '', reply, flags=re.DOTALL | re.IGNORECASE).strip()
+
+    followups: list[str] = []
+    if match:
+        raw = match.group(1).strip()
+        # 1. First attempt: split by line breaks
+        lines = [line.strip().lstrip('-*•0123456789.) ').strip() for line in raw.split('\n') if line.strip()]
+        for line in lines:
+            if len(line) > 3:
+                followups.append(line)
+
+        # 2. If single line with multiple items (like in translation or inline output)
+        if len(followups) <= 1 and raw:
+            # Split by question marks or action verbs (Check, Get, Plan, Find, Is, Any, What)
+            parts = re.split(r'(?<=\?)\s+|\s+(?=(?:Check|Get|Plan|Find|Is|Any|What|Where|How)\b)', raw)
+            parts = [p.strip().lstrip('-*•0123456789.) ').strip() for p in parts if len(p.strip()) > 3]
+            if len(parts) > len(followups):
+                followups = parts
+
+    # Filter and clean
+    cleaned_followups: list[str] = []
+    for f in followups:
+        # Strip trailing punctuation, tags, or asterisks
+        cleaned = re.sub(r'[\[\]\*]+', '', f).strip()
+        if 3 < len(cleaned) <= 60 and cleaned not in cleaned_followups:
+            cleaned_followups.append(cleaned)
+        if len(cleaned_followups) >= 3:
+            break
+
+    # Fallback to smart defaults if none could be extracted
+    if not cleaned_followups:
+        cleaned_followups = [
+            "Check marine weather",
+            "Plan safe sea route",
+            "Check boundary status"
+        ]
+
+    return clean_reply, cleaned_followups
 
 
 async def chat(

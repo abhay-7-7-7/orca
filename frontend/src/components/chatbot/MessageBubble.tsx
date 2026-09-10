@@ -44,7 +44,26 @@ export function cleanMarkdown(text: string): string {
   t = t.replace(/([^\n])\s*(###\s+)/g, '$1\n\n$2')
   t = t.replace(/([^\n])\s*(---\s*)/g, '$1\n\n$2\n\n')
 
+  // 7. Strip out any raw [FOLLOWUPS] tag and subsequent followup content
+  t = t.replace(/\[FOLLOWUPS\][\s\S]*?(?:\[\/FOLLOWUPS\]|$)/gi, '')
+
   return t.trim()
+}
+
+export function extractFollowupsFromText(text: string): string[] {
+  if (!text) return []
+  const match = text.match(/\[FOLLOWUPS\]([\s\S]*?)(?:\[\/FOLLOWUPS\]|$)/i)
+  if (!match || !match[1]) return []
+  const raw = match[1].trim()
+  
+  // Split by newlines or question verbs
+  let parts = raw.split('\n').map((s) => s.replace(/^[-*•0-9.) ]+/, '').trim()).filter((s) => s.length > 3)
+  if (parts.length <= 1) {
+    parts = raw.split(/(?<=\?)\s+|\s+(?=(?:Check|Get|Plan|Find|Is|Any|What|Where|How)\b)/)
+      .map((s) => s.replace(/^[-*•0-9.) ]+/, '').trim())
+      .filter((s) => s.length > 3)
+  }
+  return parts.slice(0, 3)
 }
 
 interface MessageBubbleProps {

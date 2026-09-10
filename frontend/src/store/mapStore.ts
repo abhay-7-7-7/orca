@@ -22,6 +22,16 @@ interface MapState {
   vessels: VesselPosition[]
   setVessels: (vessels: VesselPosition[]) => void
 
+  /* Navigation Mode */
+  navMode: 'ai' | 'manual'
+  setNavMode: (mode: 'ai' | 'manual') => void
+
+  /* Feature setup popup shown on first AI query */
+  firstQuerySetupDone: boolean
+  setFirstQuerySetupDone: (done: boolean) => void
+  showFeatureSetup: boolean
+  setShowFeatureSetup: (show: boolean) => void
+
   /* Layer visibility */
   layers: {
     seamarks: boolean
@@ -53,6 +63,14 @@ export const useMapStore = create<MapState>((set) => ({
   zoom: 6,
   setView: (center, zoom) => set({ center, zoom }),
 
+  navMode: 'ai',
+  setNavMode: (mode) => set({ navMode: mode }),
+
+  firstQuerySetupDone: false,
+  setFirstQuerySetupDone: (done) => set({ firstQuerySetupDone: done }),
+  showFeatureSetup: false,
+  setShowFeatureSetup: (show) => set({ showFeatureSetup: show }),
+
   pfzZones: [],
   setPFZZones: (zones) => set({ pfzZones: zones }),
   selectedPFZ: null,
@@ -64,9 +82,10 @@ export const useMapStore = create<MapState>((set) => ({
   vessels: [],
   setVessels: (vessels) => set({ vessels: vessels }),
 
+  /* Clean AI mode defaults: No noisy watermarked demo tiles obscuring the ocean */
   layers: {
     seamarks: true,
-    windStream: true, // Matches 2nd uploaded image: flowing streamlines
+    windStream: false,
     windBarbs: false,
     sst: false,
     waves: false,

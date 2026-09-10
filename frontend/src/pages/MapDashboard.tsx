@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import MapView from '../components/map/MapView'
 import MapControls from '../components/map/MapControls'
+import ModeSwitcher from '../components/map/ModeSwitcher'
+import FeatureSetupModal from '../components/map/FeatureSetupModal'
 import DashboardPanel from '../components/dashboard/DashboardPanel'
 import ChatBar from '../components/chatbot/ChatBar'
 import { useWorldState } from '../hooks/useWorldState'
@@ -14,7 +16,6 @@ export default function MapDashboard() {
   const loading = useMapStore((s) => s.loading)
   const setView = useMapStore((s) => s.setView)
   const activeRoute = useRouteStore((s) => s.activeRoute)
-  const dashboardOpen = useRouteStore((s) => s.dashboardOpen)
   const setDashboardOpen = useRouteStore((s) => s.setDashboardOpen)
   const mapTarget = useChatStore((s) => s.mapTarget)
 
@@ -25,7 +26,7 @@ export default function MapDashboard() {
     }
   }, [activeRoute, setDashboardOpen])
 
-  // Bridge: when chat sets a mapTarget, fly the main map there
+  // Bridge: when chat sets a mapTarget, fly the main map there smoothly
   useEffect(() => {
     if (
       mapTarget &&
@@ -40,7 +41,7 @@ export default function MapDashboard() {
   }, [mapTarget, setView])
 
   return (
-    <div className="fixed inset-0 pt-16">
+    <div className="fixed inset-0 pt-16 overflow-hidden">
       {/* Loading indicator */}
       {loading && (
         <div className="absolute top-16 left-0 right-0 z-[1001] h-1 bg-cream-200">
@@ -48,14 +49,20 @@ export default function MapDashboard() {
         </div>
       )}
 
-      {/* Map */}
+      {/* Top curved mode slider (AI Mode vs Manual Mode) */}
+      <ModeSwitcher />
+
+      {/* Center Setup Modal (shown on first query to customize live layers) */}
+      <FeatureSetupModal />
+
+      {/* Main Map & Panes */}
       <div className="w-full h-full relative">
         <MapView />
         <MapControls />
         <DashboardPanel />
       </div>
 
-      {/* Floating chat bar */}
+      {/* AI Conversational Input / Floating Assistant Bar */}
       <ChatBar />
     </div>
   )

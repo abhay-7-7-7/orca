@@ -34,20 +34,19 @@ async def compute_route(request: RouteRequest):
     store = get_world_state_store()
     grid = store.get_hazard_grid()
 
-    if grid is not None:
-        # Full hazard-cost A* routing
-        route = astar_route(grid, request.origin, request.destination)
-    else:
-        # Fallback: build a temporary grid with current data
-        # Compute a bounding box that covers the route
-        min_lat = min(request.origin.lat, request.destination.lat) - 1.0
-        max_lat = max(request.origin.lat, request.destination.lat) + 1.0
-        min_lon = min(request.origin.lon, request.destination.lon) - 1.0
-        max_lon = max(request.origin.lon, request.destination.lon) + 1.0
+    skeleton = compute_skeleton_route(request.origin, request.destination)
+
+    if grid is None:
+        # Build grid covering all skeleton waypoints with margin
+        min_lat = max(4.0, min(w.lat for w in skeleton) - 0.8)
+        max_lat = min(26.0, max(w.lat for w in skeleton) + 0.8)
+        min_lon = max(65.0, min(w.lon for w in skeleton) - 0.8)
+        max_lon = min(98.0, max(w.lon for w in skeleton) + 0.8)
 
         bbox = BoundingBox(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
         grid = store.build_hazard_grid(bbox)
-        route = astar_route(grid, request.origin, request.destination)
+
+    route = astar_route(grid, request.origin, request.destination, skeleton_waypoints=skeleton)
 
     # Store route for reroute checks
     _active_routes[route.route_id] = route

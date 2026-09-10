@@ -198,22 +198,24 @@ async def _compute_route(origin_lat, origin_lon, dest_lat, dest_lon) -> dict:
     from backend.routing.astar import astar_route
     from backend.models.common import BoundingBox
 
+    from backend.routing.skeleton import compute_skeleton_route
+
     store = get_world_state_store()
     grid = store.get_hazard_grid()
 
     origin = GeoPoint(lat=origin_lat, lon=origin_lon)
     dest = GeoPoint(lat=dest_lat, lon=dest_lon)
+    skeleton = compute_skeleton_route(origin, dest)
 
-    if grid:
-        route = astar_route(grid, origin, dest)
-    else:
-        from backend.routing.skeleton import compute_skeleton_route
-        waypoints = compute_skeleton_route(origin, dest)
-        return {
-            "waypoints": len(waypoints),
-            "algorithm": "skeleton (no hazard data available)",
-            "note": "Hazard grid not built yet — route does not account for live conditions",
-        }
+    if grid is None:
+        min_lat = max(4.0, min(w.lat for w in skeleton) - 0.8)
+        max_lat = min(26.0, max(w.lat for w in skeleton) + 0.8)
+        min_lon = max(65.0, min(w.lon for w in skeleton) - 0.8)
+        max_lon = min(98.0, max(w.lon for w in skeleton) + 0.8)
+        bbox = BoundingBox(min_lat=min_lat, max_lat=max_lat, min_lon=min_lon, max_lon=max_lon)
+        grid = store.build_hazard_grid(bbox)
+
+    route = astar_route(grid, origin, dest, skeleton_waypoints=skeleton)
 
     return {
         "route_id": route.route_id,

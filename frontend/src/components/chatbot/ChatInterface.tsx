@@ -145,7 +145,7 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
           <div key={i} className="space-y-2">
             <MessageBubble message={msg} />
 
-            {/* Follow-up suggestion chips */}
+            {/* Follow-up suggestion buttons */}
             {msg.role === 'assistant' &&
               msg.suggested_followups &&
               msg.suggested_followups.length > 0 &&
@@ -153,17 +153,18 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
                 <motion.div
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.2 }}
-                  className="ml-10 flex flex-wrap gap-1.5"
+                  transition={{ delay: 0.2, duration: 0.2 }}
+                  className="ml-9 flex flex-wrap gap-1.5"
                 >
                   {msg.suggested_followups.map((followup, j) => (
                     <button
                       key={j}
                       onClick={() => handleSend(followup)}
                       disabled={isLoading}
-                      className="text-[11px] px-3 py-1.5 rounded-full border border-cream-300 bg-white text-charcoal-700 hover:border-terracotta-500 hover:text-terracotta-700 hover:bg-terracotta-50/50 transition-all cursor-pointer disabled:opacity-40 shadow-2xs"
+                      className="text-xs px-3 py-1.5 rounded-full border border-cream-300 bg-white text-charcoal-800 hover:border-terracotta-500 hover:text-terracotta-700 hover:bg-terracotta-50/60 transition-all cursor-pointer disabled:opacity-40 shadow-2xs flex items-center gap-1.5 font-medium"
                     >
-                      {followup}
+                      <span className="text-terracotta-500 text-[10px]">●</span>
+                      <span>{followup}</span>
                     </button>
                   ))}
                 </motion.div>
