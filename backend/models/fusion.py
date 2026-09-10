@@ -23,6 +23,9 @@ class WorldStateCell(BaseModel):
     wave_height_m: Optional[float] = None
     wind_speed_kmh: Optional[float] = None
     sea_state: str = ""
+    current_speed_knots: Optional[float] = None
+    current_direction_deg: Optional[float] = None
+    sea_level_anomaly_m: Optional[float] = None
     # Hazards
     cyclone_risk: float = 0.0  # 0.0 = none, 1.0 = maximum
     lightning_risk: float = 0.0
