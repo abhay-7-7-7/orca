@@ -39,6 +39,7 @@ class HazardGrid:
         self,
         bbox: BoundingBox,
         resolution: float | None = None,
+        apply_land_mask: bool = False,
     ):
         settings = get_settings()
         self.resolution = resolution or settings.grid_resolution
@@ -53,14 +54,8 @@ class HazardGrid:
         # Cost grid — initialized to base cost (1.0 = open water, no hazard)
         self.cost_grid = np.ones((self.ny, self.nx), dtype=np.float64)
 
-        # Land mask: mark all mainland/island land cells as impassable
-        from backend.routing.land_mask import is_land
-        for i in range(self.ny):
-            lat_val = float(self.lats[i])
-            for j in range(self.nx):
-                lon_val = float(self.lons[j])
-                if is_land(lat_val, lon_val):
-                    self.cost_grid[i, j] = float("inf")
+        if apply_land_mask:
+            self.apply_land_costs()
 
         # Component grids for debugging/explanation
         self.wave_cost = np.zeros((self.ny, self.nx))
@@ -71,6 +66,16 @@ class HazardGrid:
         self.cyclone_cost = np.zeros((self.ny, self.nx))
         self.lightning_cost = np.zeros((self.ny, self.nx))
         self.geofence_cost = np.zeros((self.ny, self.nx))
+
+    def apply_land_costs(self) -> None:
+        """Mark mainland and island land cells as impassable."""
+        from backend.routing.land_mask import is_land
+        for i in range(self.ny):
+            lat_val = float(self.lats[i])
+            for j in range(self.nx):
+                lon_val = float(self.lons[j])
+                if is_land(lat_val, lon_val):
+                    self.cost_grid[i, j] = float("inf")
 
     def lat_to_idx(self, lat: float) -> int:
         """Convert latitude to grid row index."""

@@ -39,22 +39,29 @@ def astar_route(
     """
     route_id = f"RT-{uuid.uuid4().hex[:8].upper()}"
 
-    # 1. Check if maritime corridor routing is needed (crosses land or long haul)
-    needs_sea_skeleton = (
-        skeleton_waypoints is not None
-        or line_crosses_land(origin, destination)
-        or _haversine_km(origin.lat, origin.lon, destination.lat, destination.lon) > 120.0
-    )
+    # Check origin and destination cells
+    start_i, start_j = grid.lat_to_idx(origin.lat), grid.lon_to_idx(origin.lon)
+    end_i, end_j = grid.lat_to_idx(destination.lat), grid.lon_to_idx(destination.lon)
 
-    if needs_sea_skeleton:
-        waypoints = skeleton_waypoints or compute_skeleton_route(origin, destination)
+    if math.isinf(grid.cost_grid[start_i, start_j]):
+        logger.warning("Origin is in a no-go zone")
+        return _make_error_route(route_id, origin, destination, "Origin is in a no-go zone")
+
+    if math.isinf(grid.cost_grid[end_i, end_j]):
+        logger.warning("Destination is in a no-go zone")
+        return _make_error_route(route_id, origin, destination, "Destination is in a no-go zone")
+
+    # If skeleton waypoints are provided, build response along the sea path
+    if skeleton_waypoints is not None:
+        logger.info("Using provided maritime skeleton: %d waypoints", len(skeleton_waypoints))
+        return _build_response_from_points(route_id, origin, destination, skeleton_waypoints, grid)
+
+    # 1. Check if maritime corridor routing is needed (crosses land)
+    if line_crosses_land(origin, destination):
+        waypoints = compute_skeleton_route(origin, destination)
         if waypoints and len(waypoints) >= 2:
             logger.info("Using maritime sea skeleton: %d waypoints", len(waypoints))
             return _build_response_from_points(route_id, origin, destination, waypoints, grid)
-
-    # 2. Local A* on hazard grid for nearby open-water routes
-    start_i, start_j = _snap_to_water(grid, grid.lat_to_idx(origin.lat), grid.lon_to_idx(origin.lon))
-    end_i, end_j = _snap_to_water(grid, grid.lat_to_idx(destination.lat), grid.lon_to_idx(destination.lon))
 
     # Priority queue: (f_score, counter, i, j)
     counter = 0
