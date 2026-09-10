@@ -391,9 +391,8 @@ function FeatureSection({
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
           variants={stagger}
-          className={`grid grid-cols-1 lg:grid-cols-2 gap-16 items-center ${
-            imagePosition === 'left' ? 'lg:flex-row-reverse' : ''
-          }`}
+          className={`grid grid-cols-1 lg:grid-cols-2 gap-16 items-center ${imagePosition === 'left' ? 'lg:flex-row-reverse' : ''
+            }`}
         >
           {/* Visual on left */}
           {imagePosition === 'left' && (
@@ -637,9 +636,8 @@ function FeatureVisual({ index, accentColor }: { index: number; accentColor: str
           {[35, 42, 48, 55, 62, 58, 70, 85, 78, 65, 52, 45, 38, 40].map((val, idx) => (
             <div
               key={idx}
-              className={`flex-1 rounded-sm transition-all ${
-                val > 75 ? 'bg-amber-500' : 'bg-cyan-500'
-              }`}
+              className={`flex-1 rounded-sm transition-all ${val > 75 ? 'bg-amber-500' : 'bg-cyan-500'
+                }`}
               style={{ height: `${val}%` }}
             />
           ))}
