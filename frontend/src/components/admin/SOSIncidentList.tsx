@@ -13,6 +13,8 @@ import {
   Navigation,
   CheckCircle2,
   SlidersHorizontal,
+  User,
+  MapPin,
 } from 'lucide-react'
 import { DistressSignal, DistressType } from '../../types/sos'
 
@@ -46,6 +48,26 @@ function getDistressIcon(type: DistressType) {
   }
 }
 
+function formatExactTime(isoTime: string) {
+  try {
+    const d = new Date(isoTime)
+    const dateStr = d.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+    const timeStr = d.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+    return `${dateStr}, ${timeStr} IST`
+  } catch {
+    return isoTime
+  }
+}
+
 function formatElapsed(isoTime: string) {
   const diffMs = Date.now() - new Date(isoTime).getTime()
   const mins = Math.floor(diffMs / 60000)
@@ -55,6 +77,7 @@ function formatElapsed(isoTime: string) {
   if (hours < 24) return `${hours}h ${mins % 60}m ago`
   return new Date(isoTime).toLocaleDateString()
 }
+
 
 export default function SOSIncidentList({
   signals,
@@ -237,6 +260,29 @@ export default function SOSIncidentList({
                   </span>
                 </div>
 
+                {/* Distress Origin Telemetry Strip: Sender & Timestamp & Location */}
+                <div className="bg-cream-100/95 rounded-lg p-2 mb-2 text-[10px] font-sans border border-cream-300/80 space-y-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-semibold text-charcoal-900 flex items-center gap-1 truncate">
+                      <User className="w-3 h-3 text-terracotta-500 shrink-0" />
+                      <span>Sent by:</span>
+                      <strong className="text-charcoal-950 font-bold">{signal.skipper_name}</strong>
+                    </span>
+                    <span className="font-mono text-ocean-700 shrink-0 font-medium">{signal.contact_phone}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-1 text-charcoal-600 pt-0.5 border-t border-cream-200">
+                    <span className="flex items-center gap-1 font-mono text-charcoal-700">
+                      <Clock className="w-2.5 h-2.5 text-terracotta-600 shrink-0" />
+                      {formatExactTime(signal.created_at)}
+                    </span>
+                    <span className="font-mono text-charcoal-800 font-semibold flex items-center gap-1">
+                      <MapPin className="w-2.5 h-2.5 text-ocean-600 shrink-0" />
+                      {signal.location.lat.toFixed(4)}°N, {signal.location.lon.toFixed(4)}°E
+                    </span>
+                  </div>
+                </div>
+
                 {/* Brief Message */}
                 <p className="text-[11px] text-charcoal-700 font-sans line-clamp-2 leading-relaxed mb-2">
                   {signal.emergency_message}
@@ -255,11 +301,11 @@ export default function SOSIncidentList({
                     </span>
                   </div>
 
-                  <span className="flex items-center gap-1 text-charcoal-400">
-                    <Clock className="w-3 h-3" />
+                  <span className="flex items-center gap-1 text-charcoal-500 font-medium">
                     {formatElapsed(signal.created_at)}
                   </span>
                 </div>
+
               </motion.div>
             )
           })

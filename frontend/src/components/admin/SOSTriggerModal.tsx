@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   AlertOctagon,
@@ -11,8 +11,10 @@ import {
   Wrench,
   AlertTriangle,
   X,
+  UserCheck,
 } from 'lucide-react'
 import { DistressCreatePayload, DistressSeverity, DistressType } from '../../types/sos'
+import { useAuthStore } from '../../store/authStore'
 
 interface SOSTriggerModalProps {
   isOpen: boolean
@@ -37,6 +39,8 @@ export default function SOSTriggerModal({
   onQuickSimulate,
   isSimulating,
 }: SOSTriggerModalProps) {
+  const { profile, isAuthenticated } = useAuthStore()
+
   const [selectedSector, setSelectedSector] = useState(0)
   const [vesselName, setVesselName] = useState('Matsya Vahana 9')
   const [regNo, setRegNo] = useState('IND-KL-07-MM-6120')
@@ -50,7 +54,17 @@ export default function SOSTriggerModal({
   )
   const [submitting, setSubmitting] = useState(false)
 
+  // Auto-populate with authenticated skipper info if available
+  useEffect(() => {
+    if (isOpen && isAuthenticated && profile) {
+      if (profile.name) setSkipperName(profile.name)
+      if (profile.phone) setContactPhone(profile.phone)
+      if (profile.vessel_name) setVesselName(profile.vessel_name)
+    }
+  }, [isOpen, isAuthenticated, profile])
+
   if (!isOpen) return null
+
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,13 +144,26 @@ export default function SOSTriggerModal({
                 type="button"
                 onClick={handleQuick}
                 disabled={isSimulating}
-                className="w-full sm:w-auto px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold font-sans shadow-md flex items-center justify-center gap-2 transition-all shrink-0 disabled:opacity-50"
+                className="w-full sm:w-auto shrink-0 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
               >
-                <Radio className="w-4 h-4" />
-                {isSimulating ? 'Broadcasting...' : '1-Click Quick Simulate'}
+                {isSimulating ? 'Triggering...' : 'Trigger Instant SOS'}
               </button>
             </div>
 
+            {/* Authenticated Skipper Identity Badge */}
+            {isAuthenticated && profile && (
+              <div className="p-2.5 rounded-lg bg-emerald-50/90 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <UserCheck className="w-4 h-4 text-emerald-600" />
+                  <span>Transmitting as Skipper: <strong>{profile.name}</strong> ({profile.phone})</span>
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded">
+                  Linked Profile
+                </span>
+              </div>
+            )}
+
+            {/* Manual Distress Configuration Form */}
             <div className="relative flex items-center justify-center">
               <div className="border-t border-cream-200 w-full"></div>
               <span className="bg-white px-3 text-[11px] font-semibold text-charcoal-400 uppercase tracking-wider absolute">

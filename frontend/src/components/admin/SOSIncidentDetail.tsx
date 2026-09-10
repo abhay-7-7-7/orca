@@ -20,6 +20,7 @@ import {
   FileText,
   MapPin,
   ExternalLink,
+  User,
 } from 'lucide-react'
 import { DistressSignal, DistressStatus, RescueAsset } from '../../types/sos'
 
@@ -34,6 +35,37 @@ interface SOSIncidentDetailProps {
   ) => void
   onFocusMap?: (lat: number, lon: number) => void
 }
+
+function formatFullTimestamp(isoTime: string) {
+  try {
+    const d = new Date(isoTime)
+    const dateStr = d.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+    const timeStr = d.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+    return `${dateStr}, ${timeStr} IST`
+  } catch {
+    return isoTime
+  }
+}
+
+function formatElapsed(isoTime: string) {
+  const diffMs = Date.now() - new Date(isoTime).getTime()
+  const mins = Math.floor(diffMs / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ${mins % 60}m ago`
+  return new Date(isoTime).toLocaleDateString()
+}
+
 
 export default function SOSIncidentDetail({
   signal,
@@ -139,7 +171,69 @@ export default function SOSIncidentDetail({
           </div>
           <p className="leading-relaxed text-charcoal-900">{signal.emergency_message}</p>
         </div>
+
+        {/* Distress Origin & Sender Identity Telemetry Panel */}
+        <div className="p-3.5 bg-cream-100/90 rounded-xl border border-cream-300/90 space-y-2 mt-2 font-sans">
+          <div className="flex items-center justify-between border-b border-cream-200/80 pb-1.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-charcoal-900">
+              <Radio className="w-3.5 h-3.5 text-terracotta-600" />
+              <span>Verified SOS Transmission Log</span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cream-200 text-charcoal-700 font-semibold">
+              Live Marine Incident Log
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+            {/* 1. Who Sent SOS */}
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-charcoal-400 uppercase tracking-wider block font-medium">
+                Transmitted By (Skipper)
+              </span>
+              <div className="flex items-center gap-1.5 font-bold text-charcoal-950">
+                <User className="w-3.5 h-3.5 text-terracotta-600 shrink-0" />
+                <span>{signal.skipper_name}</span>
+              </div>
+              <a
+                href={`tel:${signal.contact_phone}`}
+                className="text-[11px] text-ocean-700 font-mono flex items-center gap-1 hover:underline"
+              >
+                <Phone className="w-3 h-3" />
+                {signal.contact_phone}
+              </a>
+            </div>
+
+            {/* 2. Exact Timestamp */}
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-charcoal-400 uppercase tracking-wider block font-medium">
+                Transmission Timestamp
+              </span>
+              <div className="flex items-center gap-1.5 font-bold text-charcoal-950 font-mono">
+                <Clock className="w-3.5 h-3.5 text-terracotta-600 shrink-0" />
+                <span>{formatFullTimestamp(signal.created_at)}</span>
+              </div>
+              <span className="text-[10px] text-charcoal-500 block font-sans">
+                Elapsed: {formatElapsed(signal.created_at)}
+              </span>
+            </div>
+
+            {/* 3. Exact Location */}
+            <div className="space-y-0.5">
+              <span className="text-[10px] text-charcoal-400 uppercase tracking-wider block font-medium">
+                Distress GPS Location
+              </span>
+              <div className="flex items-center gap-1.5 font-bold text-charcoal-950 font-mono">
+                <MapPin className="w-3.5 h-3.5 text-ocean-600 shrink-0" />
+                <span>{signal.location.lat.toFixed(4)}°N, {signal.location.lon.toFixed(4)}°E</span>
+              </div>
+              <span className="text-[10px] text-charcoal-600 block">
+                {signal.distance_to_coast_nm} NM off {signal.nearest_port}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
+
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
