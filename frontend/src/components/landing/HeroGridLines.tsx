@@ -230,6 +230,8 @@ export default function HeroGridLines() {
 
         {/* 5. Moving glowing nodes / sensor beads traveling along vertices on the right */}
         <motion.circle
+          cx={780}
+          cy={520}
           r="3"
           fill="#C4703F"
           animate={{
@@ -244,6 +246,8 @@ export default function HeroGridLines() {
           }}
         />
         <motion.circle
+          cx={900}
+          cy={160}
           r="3"
           fill="#2E7D96"
           animate={{

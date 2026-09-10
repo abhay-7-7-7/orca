@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { useEffect, useRef, useMemo } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { useMapStore } from '../../store/mapStore'
 import { useRouteStore } from '../../store/routeStore'
+import { useChatStore } from '../../store/chatStore'
 import PFZLayer from './PFZLayer'
 import HazardOverlay from './HazardOverlay'
 import EEZLayer from './EEZLayer'
@@ -90,6 +91,57 @@ function MapViewController() {
   }, [center, zoom, map])
 
   return null
+}
+
+/* ── Chat-driven location marker on main map ──── */
+function ChatTargetMarker() {
+  const mapTarget = useChatStore((s) => s.mapTarget)
+
+  const markerData = useMemo(() => {
+    if (!mapTarget) return null
+    const lat = Number(mapTarget.lat)
+    const lon = Number(mapTarget.lon)
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+    return { lat, lon, label: mapTarget.label }
+  }, [mapTarget])
+
+  if (!markerData) return null
+
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="
+      width: 20px; height: 20px;
+      background: #E05E3A;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      animation: pulse-ring 1.5s ease-out infinite;
+    "></div>
+    <style>
+      @keyframes pulse-ring {
+        0% { box-shadow: 0 0 0 0 rgba(224,94,58,0.5); }
+        70% { box-shadow: 0 0 0 12px rgba(224,94,58,0); }
+        100% { box-shadow: 0 0 0 0 rgba(224,94,58,0); }
+      }
+    </style>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  })
+
+  return (
+    <Marker position={[markerData.lat, markerData.lon]} icon={icon}>
+      {markerData.label && (
+        <Popup>
+          <div className="text-xs font-semibold text-charcoal-900">
+            {markerData.label}
+          </div>
+          <div className="text-[10px] text-cream-400 font-mono mt-0.5">
+            {markerData.lat.toFixed(4)}°N, {markerData.lon.toFixed(4)}°E
+          </div>
+        </Popup>
+      )}
+    </Marker>
+  )
 }
 
 export default function MapView() {
@@ -210,6 +262,7 @@ export default function MapView() {
         <MapEventHandler />
         <MapScaleControl />
         <MapViewController />
+        <ChatTargetMarker />
 
         {/* Interactive ORCA Marine layers (hardware canvas accelerated) */}
         {layers.eez && <EEZLayer />}

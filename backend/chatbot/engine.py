@@ -10,19 +10,84 @@ Falls back to a rule-based responder when no LLM key is configured.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from typing import Optional
 
 from backend.chatbot.tools import TOOLS, execute_tool
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
-from backend.models.chatbot import ChatMessage, ChatResponse, ToolCallInfo
+from backend.models.chatbot import ChatMessage, ChatResponse, LocationRef, ToolCallInfo
 
 logger = get_logger(__name__)
 
 # ── In-memory session store (hackathon) ─────────────────────────────
 # Production: replace with Redis or database
 _sessions: dict[str, list[ChatMessage]] = {}
+
+
+def _extract_locations(tool_calls_made: list[ToolCallInfo]) -> list[LocationRef]:
+    """Extract geographic locations from tool call arguments for map navigation."""
+    locations: list[LocationRef] = []
+    seen = set()
+
+    for tc in tool_calls_made:
+        args = tc.arguments
+        name = tc.tool_name
+
+        # Weather / geofence / tide calls have direct lat/lon
+        if "lat" in args and "lon" in args:
+            key = (round(float(args["lat"]), 2), round(float(args["lon"]), 2))
+            if key not in seen:
+                seen.add(key)
+                label_map = {
+                    "get_weather_at": "Weather observation",
+                    "check_geofence": "Boundary check",
+                    "get_tide": "Tide forecast",
+                }
+                locations.append(LocationRef(
+                    lat=float(args["lat"]),
+                    lon=float(args["lon"]),
+                    label=label_map.get(name, name.replace("_", " ").title()),
+                    zoom=10,
+                ))
+
+        # PFZ calls have a bounding box — use center
+        if all(k in args for k in ("min_lat", "max_lat", "min_lon", "max_lon")):
+            clat = (float(args["min_lat"]) + float(args["max_lat"])) / 2
+            clon = (float(args["min_lon"]) + float(args["max_lon"])) / 2
+            key = (round(clat, 2), round(clon, 2))
+            if key not in seen:
+                seen.add(key)
+                locations.append(LocationRef(
+                    lat=clat, lon=clon,
+                    label="PFZ search area",
+                    zoom=8,
+                ))
+
+        # Route calls have origin and destination
+        if "origin_lat" in args and "origin_lon" in args:
+            key = (round(float(args["origin_lat"]), 2), round(float(args["origin_lon"]), 2))
+            if key not in seen:
+                seen.add(key)
+                locations.append(LocationRef(
+                    lat=float(args["origin_lat"]),
+                    lon=float(args["origin_lon"]),
+                    label="Route origin",
+                    zoom=9,
+                ))
+        if "dest_lat" in args and "dest_lon" in args:
+            key = (round(float(args["dest_lat"]), 2), round(float(args["dest_lon"]), 2))
+            if key not in seen:
+                seen.add(key)
+                locations.append(LocationRef(
+                    lat=float(args["dest_lat"]),
+                    lon=float(args["dest_lon"]),
+                    label="Route destination",
+                    zoom=9,
+                ))
+
+    return locations
 
 
 SYSTEM_PROMPT = """You are ORCA, an AI assistant for Indian marine stakeholders — primarily fishermen.
@@ -44,7 +109,40 @@ IMPORTANT RULES:
 5. If a location is outside the Indian EEZ or in a no-take MPA, warn clearly.
 6. Express distances in km, times in hours, temperatures in °C.
 7. When asked "where to fish," default to a ~200km radius around the user's location or Kochi (9.93°N, 76.27°E) if no location given.
+
+FOLLOW-UP SUGGESTIONS:
+After your response, ALWAYS include exactly 2-3 short follow-up questions the user might want to ask next. Put them inside [FOLLOWUPS] and [/FOLLOWUPS] tags, one per line.
+These should be natural next steps based on what you just told them. Keep each under 40 characters.
+Example:
+[FOLLOWUPS]
+Plan route to best zone
+Check weather at Kochi
+Any storm alerts today?
+[/FOLLOWUPS]
 """
+
+
+
+def _extract_followups(reply: str) -> tuple[str, list[str]]:
+    """Extract follow-up suggestions from [FOLLOWUPS]...[/FOLLOWUPS] block.
+    
+    Returns (clean_reply, followups_list).
+    """
+    pattern = r'\[FOLLOWUPS\](.*?)\[/FOLLOWUPS\]'
+    match = re.search(pattern, reply, re.DOTALL | re.IGNORECASE)
+    
+    if not match:
+        return reply.strip(), []
+    
+    # Extract the followups
+    raw = match.group(1).strip()
+    followups = [line.strip().lstrip('- ').strip() for line in raw.split('\n') if line.strip()]
+    followups = [f for f in followups if len(f) > 2][:3]  # Max 3
+    
+    # Remove the block from the visible reply
+    clean = re.sub(pattern, '', reply, flags=re.DOTALL | re.IGNORECASE).strip()
+    
+    return clean, followups
 
 
 async def chat(
@@ -233,11 +331,15 @@ async def _chat_with_mistral(
         )
     )
 
+    clean_reply, followups = _extract_followups(reply)
+
     return ChatResponse(
-        reply=reply,
+        reply=clean_reply,
         session_id=session_id,
         tool_calls_made=tool_calls_made,
         data_citations=[tc.tool_name for tc in tool_calls_made],
+        locations=_extract_locations(tool_calls_made),
+        suggested_followups=followups,
     )
 
 
@@ -326,11 +428,15 @@ async def _chat_with_anthropic(
         )
     )
 
+    clean_reply, followups = _extract_followups(reply)
+
     return ChatResponse(
-        reply=reply,
+        reply=clean_reply,
         session_id=session_id,
         tool_calls_made=tool_calls_made,
         data_citations=[tc.tool_name for tc in tool_calls_made],
+        locations=_extract_locations(tool_calls_made),
+        suggested_followups=followups,
     )
 
 
@@ -455,9 +561,24 @@ async def _rule_based_chat(
         ChatMessage(role="assistant", content=reply, timestamp=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
     )
 
+    # Generate hardcoded follow-ups for rule-based responses
+    rule_followups = []
+    if any(w in message_lower for w in ["fish", "pfz", "catch", "where"]):
+        rule_followups = ["Check weather there", "Plan safe route", "Any storm alerts?"]
+    elif any(w in message_lower for w in ["weather", "wave", "wind", "tide"]):
+        rule_followups = ["Find fishing zones nearby", "Plan safe route", "Check boundary status"]
+    elif any(w in message_lower for w in ["route", "navigate", "go", "sail"]):
+        rule_followups = ["Check weather along route", "Find fish along route", "Any alerts?"]
+    elif any(w in message_lower for w in ["alert", "cyclone", "danger"]):
+        rule_followups = ["Find safe fishing zones", "Plan safe route", "Check local weather"]
+    else:
+        rule_followups = ["Find fishing zones near Kochi", "Check weather", "Any storm alerts?"]
+
     return ChatResponse(
         reply=reply,
         session_id=session_id,
         tool_calls_made=tool_calls,
         data_citations=[tc.tool_name for tc in tool_calls],
+        locations=_extract_locations(tool_calls),
+        suggested_followups=rule_followups,
     )

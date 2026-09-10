@@ -8,6 +8,13 @@ interface ContextChip {
   data: Record<string, unknown>
 }
 
+export interface MapTarget {
+  lat: number
+  lon: number
+  zoom?: number
+  label?: string
+}
+
 interface ChatState {
   /* Messages */
   messages: ChatMessage[]
@@ -31,6 +38,11 @@ interface ChatState {
   overrideLanguage: string | null
   setOverrideLanguage: (lang: string | null) => void
 
+  /* Map navigation target (set by chat responses) */
+  mapTarget: MapTarget | null
+  setMapTarget: (target: MapTarget | null) => void
+  clearMapTarget: () => void
+
   /* UI */
   isOverlayOpen: boolean
   setOverlayOpen: (open: boolean) => void
@@ -45,7 +57,7 @@ export const useChatStore = create<ChatState>((set) => ({
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
   setMessages: (messages) => set({ messages }),
-  clearMessages: () => set({ messages: [], contextChips: [] }),
+  clearMessages: () => set({ messages: [], contextChips: [], mapTarget: null }),
 
   sessionId: `orca-${Date.now()}`,
   setSessionId: (id) => set({ sessionId: id }),
@@ -68,6 +80,10 @@ export const useChatStore = create<ChatState>((set) => ({
   overrideLanguage: null,
   setOverrideLanguage: (lang) => set({ overrideLanguage: lang }),
 
+  mapTarget: null,
+  setMapTarget: (target) => set({ mapTarget: target }),
+  clearMapTarget: () => set({ mapTarget: null }),
+
   isOverlayOpen: false,
   setOverlayOpen: (open) => set({ isOverlayOpen: open }),
   isLoading: false,
@@ -75,3 +91,4 @@ export const useChatStore = create<ChatState>((set) => ({
   isRecording: false,
   setRecording: (recording) => set({ isRecording: recording }),
 }))
+
