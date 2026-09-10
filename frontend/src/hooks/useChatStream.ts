@@ -11,6 +11,7 @@ export function useChatStream() {
     addMessage,
     setLoading,
     setDetectedLanguage,
+    setMapTarget,
     addContextChip,
   } = useChatStore()
 
@@ -43,12 +44,27 @@ export function useChatStream() {
         // Add assistant message
         addMessage(response.message)
 
+        // Auto-navigate map to the first location from the response
+        if (response.locations && response.locations.length > 0) {
+          const loc = response.locations[0]
+          const lat = Number(loc?.lat)
+          const lon = Number(loc?.lon)
+          if (Number.isFinite(lat) && Number.isFinite(lon)) {
+            setMapTarget({
+              lat,
+              lon,
+              zoom: Number.isFinite(Number(loc.zoom)) ? Number(loc.zoom) : 10,
+              label: loc.label || undefined,
+            })
+          }
+        }
+
         // Update context chips from response
         if (response.context?.last_location) {
           addContextChip({
             id: 'location',
             type: 'location',
-            label: response.context.last_location.label || `${response.context.last_location.lat.toFixed(2)}, ${response.context.last_location.lon.toFixed(2)}`,
+            label: `📍 ${response.context.last_location.label || `${response.context.last_location.lat.toFixed(2)}, ${response.context.last_location.lon.toFixed(2)}`}`,
             data: response.context.last_location as unknown as Record<string, unknown>,
           })
         }
@@ -57,7 +73,7 @@ export function useChatStream() {
           addContextChip({
             id: 'route',
             type: 'route',
-            label: `Route: ${response.context.last_route_id}`,
+            label: `🗺️ Route: ${response.context.last_route_id}`,
             data: { route_id: response.context.last_route_id },
           })
         }
@@ -76,7 +92,7 @@ export function useChatStream() {
         setLoading(false)
       }
     },
-    [sessionId, addMessage, setLoading, setDetectedLanguage, addContextChip]
+    [sessionId, addMessage, setLoading, setDetectedLanguage, setMapTarget, addContextChip]
   )
 
   return { messages, send, isLoading: useChatStore.getState().isLoading }

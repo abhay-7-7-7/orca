@@ -16,13 +16,77 @@ from typing import Optional
 from backend.chatbot.tools import TOOLS, execute_tool
 from backend.core.config import get_settings
 from backend.core.logging import get_logger
-from backend.models.chatbot import ChatMessage, ChatResponse, ToolCallInfo
+from backend.models.chatbot import ChatMessage, ChatResponse, LocationRef, ToolCallInfo
 
 logger = get_logger(__name__)
 
 # ── In-memory session store (hackathon) ─────────────────────────────
 # Production: replace with Redis or database
 _sessions: dict[str, list[ChatMessage]] = {}
+
+
+def _extract_locations(tool_calls_made: list[ToolCallInfo]) -> list[LocationRef]:
+    """Extract geographic locations from tool call arguments for map navigation."""
+    locations: list[LocationRef] = []
+    seen = set()
+
+    for tc in tool_calls_made:
+        args = tc.arguments
+        name = tc.tool_name
+
+        # Weather / geofence / tide calls have direct lat/lon
+        if "lat" in args and "lon" in args:
+            key = (round(float(args["lat"]), 2), round(float(args["lon"]), 2))
+            if key not in seen:
+                seen.add(key)
+                label_map = {
+                    "get_weather_at": "Weather observation",
+                    "check_geofence": "Boundary check",
+                    "get_tide": "Tide forecast",
+                }
+                locations.append(LocationRef(
+                    lat=float(args["lat"]),
+                    lon=float(args["lon"]),
+                    label=label_map.get(name, name.replace("_", " ").title()),
+                    zoom=10,
+                ))
+
+        # PFZ calls have a bounding box — use center
+        if all(k in args for k in ("min_lat", "max_lat", "min_lon", "max_lon")):
+            clat = (float(args["min_lat"]) + float(args["max_lat"])) / 2
+            clon = (float(args["min_lon"]) + float(args["max_lon"])) / 2
+            key = (round(clat, 2), round(clon, 2))
+            if key not in seen:
+                seen.add(key)
+                locations.append(LocationRef(
+                    lat=clat, lon=clon,
+                    label="PFZ search area",
+                    zoom=8,
+                ))
+
+        # Route calls have origin and destination
+        if "origin_lat" in args and "origin_lon" in args:
+            key = (round(float(args["origin_lat"]), 2), round(float(args["origin_lon"]), 2))
+            if key not in seen:
+                seen.add(key)
+                locations.append(LocationRef(
+                    lat=float(args["origin_lat"]),
+                    lon=float(args["origin_lon"]),
+                    label="Route origin",
+                    zoom=9,
+                ))
+        if "dest_lat" in args and "dest_lon" in args:
+            key = (round(float(args["dest_lat"]), 2), round(float(args["dest_lon"]), 2))
+            if key not in seen:
+                seen.add(key)
+                locations.append(LocationRef(
+                    lat=float(args["dest_lat"]),
+                    lon=float(args["dest_lon"]),
+                    label="Route destination",
+                    zoom=9,
+                ))
+
+    return locations
 
 
 SYSTEM_PROMPT = """You are ORCA, an AI assistant for Indian marine stakeholders — primarily fishermen.
@@ -238,6 +302,7 @@ async def _chat_with_mistral(
         session_id=session_id,
         tool_calls_made=tool_calls_made,
         data_citations=[tc.tool_name for tc in tool_calls_made],
+        locations=_extract_locations(tool_calls_made),
     )
 
 
@@ -331,6 +396,7 @@ async def _chat_with_anthropic(
         session_id=session_id,
         tool_calls_made=tool_calls_made,
         data_citations=[tc.tool_name for tc in tool_calls_made],
+        locations=_extract_locations(tool_calls_made),
     )
 
 
@@ -460,4 +526,5 @@ async def _rule_based_chat(
         session_id=session_id,
         tool_calls_made=tool_calls,
         data_citations=[tc.tool_name for tc in tool_calls],
+        locations=_extract_locations(tool_calls),
     )

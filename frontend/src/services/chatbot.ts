@@ -23,6 +23,7 @@ export interface ChatResponse {
   message: ChatMessage
   session_id: string
   detected_language?: string
+  locations?: { lat: number; lon: number; label?: string; zoom?: number }[]
   context?: {
     last_location?: { lat: number; lon: number; label?: string }
     last_route_id?: string
@@ -49,6 +50,7 @@ interface BackendChatResponse {
   tool_calls_made?: BackendToolCallInfo[]
   data_citations?: string[]
   language_detected?: string
+  locations?: { lat: number; lon: number; label?: string; zoom?: number }[]
 }
 
 /* ---------- Adapters ---------- */
@@ -85,6 +87,7 @@ function adaptChatResponse(backend: BackendChatResponse): ChatResponse {
     message,
     session_id: backend.session_id,
     detected_language: backend.language_detected,
+    locations: backend.locations,
     // Context extraction from response is not provided by backend —
     // context chips are handled by the frontend's useChatStream hook
     // based on the message content

@@ -44,6 +44,15 @@ class ToolCallInfo(BaseModel):
     result_summary: str = ""
 
 
+class LocationRef(BaseModel):
+    """A geographic location referenced in a chatbot response."""
+
+    lat: float
+    lon: float
+    label: Optional[str] = None
+    zoom: Optional[int] = None
+
+
 class ChatResponse(BaseModel):
     """Chatbot response with tool call citations."""
 
@@ -52,3 +61,4 @@ class ChatResponse(BaseModel):
     tool_calls_made: list[ToolCallInfo] = Field(default_factory=list)
     data_citations: list[str] = Field(default_factory=list)
     language_detected: Optional[str] = None
+    locations: list[LocationRef] = Field(default_factory=list)
