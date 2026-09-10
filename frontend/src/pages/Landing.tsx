@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import Footer from '../components/common/Footer'
 import HeroGridLines from '../components/landing/HeroGridLines'
 import HeroLiveWidget from '../components/landing/HeroLiveWidget'
-import OceanTicker from '../components/landing/OceanTicker'
 import LiveRouteSimulator from '../components/landing/LiveRouteSimulator'
 import LiveAgentMonitor from '../components/landing/LiveAgentMonitor'
 
@@ -78,31 +77,9 @@ export default function Landing() {
               </Link>
             </motion.div>
 
-            {/* Source and verification strip */}
-            <motion.div
-              variants={fadeUp}
-              custom={4}
-              className="pt-6 border-t border-cream-300/80 flex flex-wrap items-center gap-6 text-xs text-charcoal-800/60"
-            >
-              <div className="flex items-center gap-1.5 font-medium">
-                <span>🛰️</span>
-                <span>Copernicus & NOAA Feeds</span>
-              </div>
-              <div className="flex items-center gap-1.5 font-medium">
-                <span>🐟</span>
-                <span>INCOIS PFZ Model</span>
-              </div>
-              <div className="flex items-center gap-1.5 font-medium">
-                <span>🛡️</span>
-                <span>200 NM Indian EEZ Guard</span>
-              </div>
-            </motion.div>
           </motion.div>
         </div>
       </section>
-
-      {/* ============ LIVE OCEAN TICKER ============ */}
-      <OceanTicker />
 
       {/* ============ LIVE TELEMETRY DECK (MOVED BELOW HERO) ============ */}
       <section className="py-16 md:py-20 bg-cream-50/90 border-b border-cream-200">
@@ -269,22 +246,18 @@ export default function Landing() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
           >
             <PillarCard
-              icon="🔍"
               title={t('pillars.explainable')}
               description={t('pillars.explainableDesc')}
             />
             <PillarCard
-              icon="🗣️"
               title={t('pillars.multilingual')}
               description={t('pillars.multilingualDesc')}
             />
             <PillarCard
-              icon="📡"
               title={t('pillars.live')}
               description={t('pillars.liveDesc')}
             />
             <PillarCard
-              icon="🛡️"
               title={t('pillars.safety')}
               description={t('pillars.safetyDesc')}
             />
@@ -663,17 +636,14 @@ function FeatureVisual({ index, accentColor }: { index: number; accentColor: str
 }
 
 function PillarCard({
-  icon,
   title,
   description,
 }: {
-  icon: string
   title: string
   description: string
 }) {
   return (
     <motion.div variants={fadeUp} className="pillar-card">
-      <span className="text-2xl mb-4 block">{icon}</span>
       <h3>{title}</h3>
       <p>{description}</p>
     </motion.div>
