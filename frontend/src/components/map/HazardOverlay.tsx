@@ -1,4 +1,4 @@
-import { Rectangle, Tooltip } from 'react-leaflet'
+import { Circle, CircleMarker, Popup } from 'react-leaflet'
 import { useMapStore } from '../../store/mapStore'
 
 export default function HazardOverlay() {
@@ -6,52 +6,62 @@ export default function HazardOverlay() {
 
   if (!worldState.length) return null
 
+  // Find cells with critical/severe marine conditions (e.g. wave > 2.2m or cyclone proximity)
+  const criticalCells = worldState.filter(
+    (cell) => (cell.wave_height || 0) >= 2.2 || (cell.hazard_cost || 0) >= 0.65
+  )
+
   return (
     <>
-      {worldState.map((cell, i) => {
-        const cost = cell.hazard_cost || 0
-        if (cost < 0.1) return null // Skip very low hazard cells
-
-        const color = getHazardColor(cost)
-        const halfRes = 0.25 // Half the resolution for cell bounds
+      {criticalCells.map((cell, i) => {
+        const wave = cell.wave_height || 2.4
 
         return (
-          <Rectangle
-            key={i}
-            bounds={[
-              [cell.lat - halfRes, cell.lon - halfRes],
-              [cell.lat + halfRes, cell.lon + halfRes],
-            ]}
-            pathOptions={{
-              color: 'transparent',
-              fillColor: color,
-              fillOpacity: Math.min(0.5, cost * 0.4),
-              weight: 0,
-            }}
-          >
-            <Tooltip>
-              <div className="font-sans text-xs">
-                <p className="font-medium">Hazard Level: {(cost * 100).toFixed(0)}%</p>
-                {cell.wave_height !== undefined && (
-                  <p>🌊 Wave: {cell.wave_height.toFixed(1)}m</p>
-                )}
-                {cell.wind_speed !== undefined && (
-                  <p>💨 Wind: {cell.wind_speed.toFixed(1)} km/h</p>
-                )}
-                {cell.in_mpa && <p>🏛️ Marine Protected Area</p>}
-                {cell.in_eez === false && <p>⚠️ Outside EEZ</p>}
-              </div>
-            </Tooltip>
-          </Rectangle>
+          <div key={`crit-hazard-${i}-${cell.lat}-${cell.lon}`}>
+            {/* Warning radius circle */}
+            <Circle
+              center={[cell.lat, cell.lon]}
+              radius={18000} // 18 km alert radius
+              pathOptions={{
+                color: '#EF4444',
+                fillColor: '#EF4444',
+                fillOpacity: 0.15,
+                weight: 1.5,
+                dashArray: '4, 4',
+              }}
+            />
+
+            {/* Warning beacon pin */}
+            <CircleMarker
+              center={[cell.lat, cell.lon]}
+              radius={6}
+              pathOptions={{
+                color: '#DC2626',
+                fillColor: '#FFFFFF',
+                fillOpacity: 1,
+                weight: 2,
+              }}
+            >
+              <Popup>
+                <div className="font-sans text-xs p-1 min-w-[160px]">
+                  <p className="font-bold text-red-600 flex items-center gap-1">
+                    <span>⚠️</span> Rough Sea Swell Warning
+                  </p>
+                  <p className="text-gray-700 mt-1">
+                    Significant wave height: <span className="font-bold text-red-600">{wave.toFixed(1)}m</span>
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Position: {cell.lat.toFixed(2)}°N, {cell.lon.toFixed(2)}°E
+                  </p>
+                  <p className="text-[10px] text-amber-700 mt-1 font-medium bg-amber-50 p-1 rounded">
+                    Navigation advisory: Reduce speed & avoid small craft operations.
+                  </p>
+                </div>
+              </Popup>
+            </CircleMarker>
+          </div>
         )
       })}
     </>
   )
-}
-
-function getHazardColor(cost: number): string {
-  if (cost >= 0.8) return '#D32F2F' // Critical — red
-  if (cost >= 0.5) return '#FF9800' // High — orange
-  if (cost >= 0.3) return '#FFC107' // Medium — amber
-  return '#4CAF50' // Low — green
 }

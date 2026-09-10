@@ -24,6 +24,11 @@ interface MapState {
 
   /* Layer visibility */
   layers: {
+    seamarks: boolean
+    windStream: boolean
+    windBarbs: boolean
+    sst: boolean
+    waves: boolean
     pfz: boolean
     hazards: boolean
     vessels: boolean
@@ -31,6 +36,11 @@ interface MapState {
     route: boolean
   }
   toggleLayer: (layer: keyof MapState['layers']) => void
+  setLayer: (layer: keyof MapState['layers'], enabled: boolean) => void
+
+  /* Map click mode for routing */
+  mapClickMode: 'none' | 'set_origin' | 'set_destination'
+  setMapClickMode: (mode: 'none' | 'set_origin' | 'set_destination') => void
 
   /* Loading */
   loading: boolean
@@ -38,9 +48,9 @@ interface MapState {
 }
 
 export const useMapStore = create<MapState>((set) => ({
-  /* Default view: Indian west coast, centered on Kerala */
-  center: [10.0, 76.0],
-  zoom: 8,
+  /* Default view: Panoramic view of Indian subcontinent & Arabian Sea as in OpenSeaMap */
+  center: [12.5, 76.5],
+  zoom: 6,
   setView: (center, zoom) => set({ center, zoom }),
 
   pfzZones: [],
@@ -55,6 +65,11 @@ export const useMapStore = create<MapState>((set) => ({
   setVessels: (vessels) => set({ vessels: vessels }),
 
   layers: {
+    seamarks: true,
+    windStream: true, // Matches 2nd uploaded image: flowing streamlines
+    windBarbs: false,
+    sst: false,
+    waves: false,
     pfz: true,
     hazards: true,
     vessels: true,
@@ -65,6 +80,13 @@ export const useMapStore = create<MapState>((set) => ({
     set((state) => ({
       layers: { ...state.layers, [layer]: !state.layers[layer] },
     })),
+  setLayer: (layer, enabled) =>
+    set((state) => ({
+      layers: { ...state.layers, [layer]: enabled },
+    })),
+
+  mapClickMode: 'none',
+  setMapClickMode: (mode) => set({ mapClickMode: mode }),
 
   loading: false,
   setLoading: (loading) => set({ loading }),
