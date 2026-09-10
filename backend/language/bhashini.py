@@ -113,15 +113,17 @@ async def speech_to_text(
     """Convert speech to text using Bhashini ASR."""
     settings = get_settings()
 
-    if settings.has_bhashini_credentials:
+    if settings.has_bhashini_credentials and audio_base64:
         try:
-            return await _bhashini_asr(audio_base64, source_language, audio_format)
+            res = await _bhashini_asr(audio_base64, source_language, audio_format)
+            if res.text:
+                return res
         except Exception as exc:
             logger.warning("Bhashini ASR failed: %s", exc)
 
     return ASRResponse(
-        text="[ASR not configured — Bhashini credentials required]",
-        detected_language=source_language or "unknown",
+        text="",
+        detected_language=source_language or "en",
         confidence=0.0,
     )
 
@@ -207,8 +209,69 @@ async def _bhashini_translate(
 async def _bhashini_asr(
     audio_base64: str, source_language: str, audio_format: str
 ) -> ASRResponse:
-    """Call Bhashini ASR API."""
-    return ASRResponse(text="", detected_language=source_language, confidence=0.0)
+    """Call Bhashini ASR API via Dhruva pipeline."""
+    if not audio_base64:
+        return ASRResponse(text="", detected_language=source_language or "en", confidence=0.0)
+
+    settings = get_settings()
+    client = get_http_client()
+
+    lang = (source_language or "en").lower().strip()
+    if lang not in SUPPORTED_LANGUAGES:
+        lang = "en"
+
+    # Select appropriate ASR model from Bhashini pipeline
+    if lang == "en":
+        service_id = "ai4bharat/whisper-medium-en--gpu--t4"
+    elif lang == "hi":
+        service_id = "ai4bharat/conformer-hi-gpu--t4"
+    elif lang in {"ml", "ta", "te", "kn"}:
+        service_id = "ai4bharat/conformer-multilingual-dravidian-gpu--t4"
+    else:
+        service_id = "ai4bharat/conformer-multilingual-indo_aryan-gpu--t4"
+
+    url = settings.bhashini_dhruva_url
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": settings.effective_bhashini_key,
+    }
+    payload = {
+        "pipelineTasks": [
+            {
+                "taskType": "asr",
+                "config": {
+                    "language": {"sourceLanguage": lang},
+                    "serviceId": service_id,
+                    "audioFormat": "wav",
+                    "samplingRate": 16000,
+                },
+            }
+        ],
+        "inputData": {
+            "audio": [{"audioContent": audio_base64}]
+        },
+    }
+
+    try:
+        resp = await client.post(url, json=payload, headers=headers, timeout=60.0)
+        resp.raise_for_status()
+        data = resp.json()
+
+        transcript = ""
+        pipeline_resps = data.get("pipelineResponse", [])
+        if pipeline_resps:
+            outputs = pipeline_resps[0].get("output", [])
+            if outputs:
+                transcript = outputs[0].get("source", "").strip()
+
+        return ASRResponse(
+            text=transcript,
+            detected_language=lang,
+            confidence=0.9 if transcript else 0.0,
+        )
+    except Exception as exc:
+        logger.error("Bhashini ASR call failed: %s", exc)
+        return ASRResponse(text="", detected_language=lang, confidence=0.0)
 
 
 async def _bhashini_tts(
@@ -219,11 +282,12 @@ async def _bhashini_tts(
     client = get_http_client()
 
     dravidian_langs = {"ml", "ta", "te", "kn"}
-    service_id = (
-        "ai4bharat/indic-tts-coqui-dravidian-gpu--t4"
-        if target_language in dravidian_langs
-        else "ai4bharat/indic-tts-coqui-indo_aryan-gpu--t4"
-    )
+    if target_language in dravidian_langs:
+        service_id = "ai4bharat/indic-tts-coqui-dravidian-gpu--t4"
+    elif target_language == "en":
+        service_id = "ai4bharat/indic-tts-coqui-misc-gpu--t4"
+    else:
+        service_id = "ai4bharat/indic-tts-coqui-indo_aryan-gpu--t4"
 
     url = settings.bhashini_dhruva_url
     headers = {

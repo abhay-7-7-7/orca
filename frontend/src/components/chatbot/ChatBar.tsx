@@ -38,7 +38,18 @@ export default function ChatBar() {
   const setShowFeatureSetup = useMapStore((s) => s.setShowFeatureSetup)
 
   const { send } = useChatStream()
-  const { startRecording, stopRecording } = useVoiceInput()
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null)
+
+  const {
+    startRecording,
+    stopRecording,
+    interimTranscript,
+    voiceError,
+  } = useVoiceInput({
+    onTranscriptChange: (liveText) => {
+      if (liveText) setInput(liveText)
+    },
+  })
 
   const hasMessages = messages.length > 0
   const lastMsg = messages[messages.length - 1]
@@ -55,6 +66,7 @@ export default function ChatBar() {
     const msg = text || input
     if (!msg.trim() || isLoading) return
     if (!text) setInput('')
+    setVoiceNotice(null)
 
     // First time in AI mode: present feature setup pop-up
     if (!firstQuerySetupDone) {
@@ -72,14 +84,30 @@ export default function ChatBar() {
   }
 
   const handleVoice = async () => {
+    setVoiceNotice(null)
     if (isRecording) {
-      const text = await stopRecording()
-      if (text) {
-        setInput(text)
-        await handleSend(text)
+      try {
+        const text = await stopRecording()
+        const finalText = (text || input).trim()
+        if (finalText) {
+          setInput(finalText)
+          await handleSend(finalText)
+        } else {
+          setVoiceNotice('No speech detected. Please speak clearly and try again.')
+          setTimeout(() => setVoiceNotice(null), 4000)
+        }
+      } catch (err) {
+        console.error('Stop voice error:', err)
       }
     } else {
-      await startRecording()
+      try {
+        setInput('')
+        await startRecording()
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Could not access microphone.'
+        setVoiceNotice(msg)
+        setTimeout(() => setVoiceNotice(null), 4000)
+      }
     }
   }
 
@@ -137,7 +165,11 @@ export default function ChatBar() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask ORCA: e.g. 'Plan route from Kochi to Thoothukudi'..."
+              placeholder={
+                isRecording
+                  ? (interimTranscript ? `Listening: "${interimTranscript}"` : 'Listening... speak in your language')
+                  : "Ask ORCA: e.g. 'Plan route from Kochi to Thoothukudi'..."
+              }
               className="flex-1 text-sm bg-transparent focus:outline-none text-charcoal-900 placeholder:text-charcoal-400 font-sans"
               autoFocus
             />
@@ -152,6 +184,13 @@ export default function ChatBar() {
               <ArrowRight size={13} />
             </button>
           </div>
+
+          {(voiceNotice || voiceError) && (
+            <div className="mb-2 text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center justify-between">
+              <span>{voiceNotice || voiceError}</span>
+              <button type="button" onClick={() => setVoiceNotice(null)} className="cursor-pointer font-bold text-amber-600">✕</button>
+            </div>
+          )}
 
           {/* Quick Action Pills */}
           <div className="flex flex-wrap gap-2 pt-1 border-t border-cream-200/60">
@@ -319,6 +358,14 @@ export default function ChatBar() {
                 </div>
               )}
 
+            {/* Voice Notice */}
+            {(voiceNotice || voiceError) && (
+              <div className="px-3 py-1 bg-amber-50 border-t border-amber-200 text-amber-800 text-xs flex items-center justify-between">
+                <span>{voiceNotice || voiceError}</span>
+                <button type="button" onClick={() => setVoiceNotice(null)} className="cursor-pointer font-bold text-amber-600">✕</button>
+              </div>
+            )}
+
             {/* Input Bar */}
             <div className="p-3 border-t border-cream-200/80 bg-white flex items-center gap-2">
               <button
@@ -339,7 +386,11 @@ export default function ChatBar() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask follow-up or enter port..."
+                placeholder={
+                  isRecording
+                    ? (interimTranscript ? `Listening: "${interimTranscript}"` : 'Listening...')
+                    : "Ask follow-up or enter port..."
+                }
                 disabled={isRecording}
                 className="flex-1 px-3 py-1.5 text-xs bg-cream-50/70 border border-cream-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-terracotta-500 font-sans text-charcoal-900 placeholder:text-charcoal-400"
               />
