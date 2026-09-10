@@ -24,6 +24,9 @@ interface MapState {
 
   /* Layer visibility */
   layers: {
+    seamarks: boolean
+    wind: boolean
+    sst: boolean
     pfz: boolean
     hazards: boolean
     vessels: boolean
@@ -31,6 +34,11 @@ interface MapState {
     route: boolean
   }
   toggleLayer: (layer: keyof MapState['layers']) => void
+  setLayer: (layer: keyof MapState['layers'], enabled: boolean) => void
+
+  /* Map click mode for routing */
+  mapClickMode: 'none' | 'set_origin' | 'set_destination'
+  setMapClickMode: (mode: 'none' | 'set_origin' | 'set_destination') => void
 
   /* Loading */
   loading: boolean
@@ -39,7 +47,7 @@ interface MapState {
 
 export const useMapStore = create<MapState>((set) => ({
   /* Default view: Indian west coast, centered on Kerala */
-  center: [10.0, 76.0],
+  center: [9.85, 75.85],
   zoom: 8,
   setView: (center, zoom) => set({ center, zoom }),
 
@@ -55,6 +63,9 @@ export const useMapStore = create<MapState>((set) => ({
   setVessels: (vessels) => set({ vessels: vessels }),
 
   layers: {
+    seamarks: true,
+    wind: true,
+    sst: true,
     pfz: true,
     hazards: true,
     vessels: true,
@@ -65,6 +76,13 @@ export const useMapStore = create<MapState>((set) => ({
     set((state) => ({
       layers: { ...state.layers, [layer]: !state.layers[layer] },
     })),
+  setLayer: (layer, enabled) =>
+    set((state) => ({
+      layers: { ...state.layers, [layer]: enabled },
+    })),
+
+  mapClickMode: 'none',
+  setMapClickMode: (mode) => set({ mapClickMode: mode }),
 
   loading: false,
   setLoading: (loading) => set({ loading }),
