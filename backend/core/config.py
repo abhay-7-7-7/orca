@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     bhashini_pipeline_id: str = ""
     llm_provider: str = "mistral"
     llm_api_key: str = ""
-    llm_model: str = "codestral-latest"
+    llm_model: str = "ministral-8b-latest"
     copernicusmarine_service_username: str = ""
     copernicusmarine_service_password: str = ""
     copernicus_username: str = ""

@@ -137,7 +137,7 @@ async def _chat_with_mistral(
 
     tool_calls_made = []
     max_tool_rounds = 5
-    model = settings.llm_model or "codestral-latest"
+    model = settings.llm_model or "ministral-8b-latest"
 
     for round_num in range(max_tool_rounds):
         payload = {

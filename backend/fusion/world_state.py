@@ -238,7 +238,9 @@ class WorldStateStore:
 
         # Routing cost from hazard grid
         if self._hazard_grid:
-            cell.routing_cost = self._hazard_grid.get_cell_cost(lat, lon)
+            raw_cost = self._hazard_grid.get_cell_cost(lat, lon)
+            import math
+            cell.routing_cost = 9999.0 if (math.isinf(raw_cost) or math.isnan(raw_cost)) else float(raw_cost)
 
         return cell
 

@@ -245,7 +245,7 @@ def _make_error_route(
         origin=origin,
         destination=destination,
         waypoints=[],
-        total_cost=float("inf"),
+        total_cost=999999.0,
         is_safe=False,
         warnings=[error],
     )
