@@ -105,9 +105,9 @@ def _try_include(app: FastAPI, module_path: str, prefix: str) -> None:
         router = getattr(mod, "router", None)
         if router:
             app.include_router(router, prefix=prefix)
-            logger.info("Loaded router: %s → %s", module_path, prefix)
+            logger.info("Loaded router: %s -> %s", module_path, prefix)
         else:
-            logger.warning("Module %s has no 'router' attribute — skipped", module_path)
+            logger.warning("Module %s has no 'router' attribute -- skipped", module_path)
     except ImportError as exc:
         logger.info("Router %s not yet available: %s", module_path, exc)
     except Exception as exc:

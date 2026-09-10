@@ -1,7 +1,12 @@
 import type { ComputedRoute } from '../../services/routing'
 
 export default function RouteInfo({ route }: { route: ComputedRoute }) {
-  const safetyScore = Math.max(0, 100 - route.average_hazard_cost * 100)
+  // Derive safety score: if we have hazard_summary, use max wave; otherwise use is_safe flag
+  const safetyScore = route.is_safe
+    ? route.hazard_summary
+      ? Math.max(0, 100 - (route.hazard_summary.max_wave_height_m / 4) * 60)
+      : 85
+    : 35
 
   return (
     <div className="bg-cream-50 rounded-xl p-4 border border-cream-200">
@@ -52,6 +57,24 @@ export default function RouteInfo({ route }: { route: ComputedRoute }) {
         </div>
       </div>
 
+      {/* Hazard summary */}
+      {route.hazard_summary && (
+        <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
+          <div className="bg-blue-50 rounded-lg px-2 py-1.5 border border-blue-100">
+            <p className="text-blue-500 font-medium">Max Wave</p>
+            <p className="text-charcoal-900 font-semibold">
+              {route.hazard_summary.max_wave_height_m.toFixed(1)}m
+            </p>
+          </div>
+          <div className="bg-blue-50 rounded-lg px-2 py-1.5 border border-blue-100">
+            <p className="text-blue-500 font-medium">Max Wind</p>
+            <p className="text-charcoal-900 font-semibold">
+              {route.hazard_summary.max_wind_speed_kmh.toFixed(0)} km/h
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Route details */}
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
@@ -72,10 +95,16 @@ export default function RouteInfo({ route }: { route: ComputedRoute }) {
             {route.waypoints?.length || route.path?.length || 0}
           </span>
         </div>
-        {route.geofence_violations?.length > 0 && (
+        <div className="flex justify-between">
+          <span className="text-cream-400">Algorithm</span>
+          <span className="text-charcoal-900 font-medium text-xs">
+            {route.algorithm}
+          </span>
+        </div>
+        {route.warnings?.length > 0 && (
           <div className="bg-red-50 rounded-lg px-3 py-2 mt-2 border border-red-200">
             <p className="text-xs text-red-700 font-medium">
-              ⚠️ Geofence violations: {route.geofence_violations.join(', ')}
+              ⚠️ {route.warnings.join(', ')}
             </p>
           </div>
         )}
