@@ -73,16 +73,142 @@ async def chat(
     )
 
     # Try LLM-powered response
-    if settings.llm_api_key and settings.llm_provider == "anthropic":
-        try:
-            response = await _chat_with_anthropic(message, session_id, location)
-            return response
-        except Exception as exc:
-            logger.error("LLM chat failed: %s — falling back to rule-based", exc)
+    if settings.llm_api_key:
+        if settings.llm_provider == "mistral":
+            try:
+                response = await _chat_with_mistral(message, session_id, location)
+                return response
+            except Exception as exc:
+                logger.error("Mistral LLM chat failed: %s — falling back to rule-based", exc)
+        elif settings.llm_provider == "anthropic":
+            try:
+                response = await _chat_with_anthropic(message, session_id, location)
+                return response
+            except Exception as exc:
+                logger.error("Anthropic LLM chat failed: %s — falling back to rule-based", exc)
 
     # Fallback: rule-based responder
     response = await _rule_based_chat(message, session_id, location)
     return response
+
+
+async def _chat_with_mistral(
+    message: str,
+    session_id: str,
+    location: dict | None,
+) -> ChatResponse:
+    """Use Mistral AI for tool-calling chat."""
+    from backend.core.http_client import get_http_client
+
+    settings = get_settings()
+    client = get_http_client()
+
+    url = "https://api.mistral.ai/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.llm_api_key}",
+    }
+
+    # Build messages (keep last 10 turns for context)
+    history = _sessions.get(session_id, [])[-10:]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for m in history:
+        messages.append({"role": m.role, "content": m.content})
+
+    # Add location context if provided
+    if location and messages:
+        messages[-1]["content"] += (
+            f"\n\n[User's current location: {location.get('lat', 'unknown')}°N, "
+            f"{location.get('lon', 'unknown')}°E]"
+        )
+
+    # Convert our tool definitions to Mistral format
+    mistral_tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": t["name"],
+                "description": t["description"],
+                "parameters": t["parameters"],
+            },
+        }
+        for t in TOOLS
+    ]
+
+    tool_calls_made = []
+    max_tool_rounds = 5
+    model = settings.llm_model or "codestral-latest"
+
+    for round_num in range(max_tool_rounds):
+        payload = {
+            "model": model,
+            "messages": messages,
+            "tools": mistral_tools,
+            "tool_choice": "auto",
+        }
+
+        resp = await client.post(url, json=payload, headers=headers)
+        if resp.status_code == 429 and model != "open-mistral-7b":
+            logger.warning("Mistral model %s rate limited, trying open-mistral-7b", model)
+            payload["model"] = "open-mistral-7b"
+            resp = await client.post(url, json=payload, headers=headers)
+
+        resp.raise_for_status()
+        data = resp.json()
+        choice = data.get("choices", [{}])[0]
+        choice_msg = choice.get("message", {})
+
+        tool_calls = choice_msg.get("tool_calls")
+        if not tool_calls:
+            # No tool calls — extract text reply
+            reply = choice_msg.get("content") or "I'm sorry, I couldn't generate a response."
+            break
+
+        # Append assistant message with tool calls
+        messages.append(choice_msg)
+
+        # Execute each tool call and append tool response
+        for tc in tool_calls:
+            func = tc.get("function", {})
+            tool_name = func.get("name", "")
+            try:
+                args = json.loads(func.get("arguments", "{}"))
+            except json.JSONDecodeError:
+                args = {}
+
+            result = await execute_tool(tool_name, args)
+            tool_calls_made.append(
+                ToolCallInfo(
+                    tool_name=tool_name,
+                    arguments=args,
+                    result_summary=json.dumps(result)[:200],
+                )
+            )
+
+            messages.append({
+                "role": "tool",
+                "name": tool_name,
+                "tool_call_id": tc.get("id", f"call_{len(tool_calls_made)}"),
+                "content": json.dumps(result),
+            })
+    else:
+        reply = "I've gathered the data. Let me summarize what I found."
+
+    # Store assistant response in history
+    _sessions[session_id].append(
+        ChatMessage(
+            role="assistant",
+            content=reply,
+            timestamp=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        )
+    )
+
+    return ChatResponse(
+        reply=reply,
+        session_id=session_id,
+        tool_calls_made=tool_calls_made,
+        data_citations=[tc.tool_name for tc in tool_calls_made],
+    )
 
 
 async def _chat_with_anthropic(
