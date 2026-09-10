@@ -2,6 +2,11 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Footer from '../components/common/Footer'
+import HeroGridLines from '../components/landing/HeroGridLines'
+import HeroLiveWidget from '../components/landing/HeroLiveWidget'
+import OceanTicker from '../components/landing/OceanTicker'
+import LiveRouteSimulator from '../components/landing/LiveRouteSimulator'
+import LiveAgentMonitor from '../components/landing/LiveAgentMonitor'
 
 /* --- Animation variants --- */
 const fadeUp = {
@@ -22,61 +27,98 @@ export default function Landing() {
 
   return (
     <div className="bg-cream-100 min-h-screen">
-      {/* ============ HERO ============ */}
-      <section className="pt-32 pb-24 md:pt-44 md:pb-32 relative overflow-hidden">
-        {/* Subtle background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cream-100 via-cream-200/40 to-cream-100 pointer-events-none" />
-        <div
-          className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full pointer-events-none opacity-[0.07]"
-          style={{
-            background: 'radial-gradient(circle, #C4703F 0%, transparent 70%)',
-          }}
-        />
+      {/* ============ HERO WITH LIVE MOVING LINES BACKGROUND ============ */}
+      <section className="pt-32 pb-24 md:pt-44 md:pb-36 relative overflow-hidden min-h-[85vh] flex items-center">
+        {/* Live architectural moving grid & bezier line interconnects (matches screenshot) */}
+        <HeroGridLines />
 
-        <div className="section-container relative z-10">
+        <div className="section-container relative z-10 w-full">
           <motion.div
             initial="hidden"
             animate="visible"
             variants={stagger}
-            className="max-w-3xl"
+            className="max-w-2xl"
           >
-            <motion.p variants={fadeUp} custom={0} className="label-caps mb-6">
-              Marine Intelligence Platform
-            </motion.p>
+            <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 mb-6">
+              <span className="label-caps">Marine Intelligence Platform</span>
+              <span className="text-[10px] font-bold text-terracotta-700 bg-terracotta-100/70 px-2.5 py-0.5 rounded-full border border-terracotta-300/60">
+                ISRO SIH 2026
+              </span>
+            </motion.div>
 
             <motion.h1
               variants={fadeUp}
               custom={1}
-              className="text-display-xl md:text-[5.5rem] font-serif font-semibold text-charcoal-900 mb-8 leading-[1.02]"
-              style={{ letterSpacing: '-0.03em' }}
+              className="text-display-xl md:text-[5.8rem] font-serif font-semibold text-charcoal-900 mb-8 leading-[1.0] tracking-tight"
             >
               Know where{' '}
               <br className="hidden md:block" />
               the fish are.{' '}
               <br />
-              <span className="text-cream-400">Know the way back.</span>
+              <span className="text-cream-400 font-normal">Know the way back.</span>
             </motion.h1>
 
             <motion.p
               variants={fadeUp}
               custom={2}
-              className="text-lg md:text-xl text-cream-400 max-w-xl mb-10 leading-relaxed font-sans"
+              className="text-lg md:text-xl text-charcoal-800/80 max-w-lg mb-10 leading-relaxed font-sans"
             >
               {t('hero.subheadline')}
             </motion.p>
 
-            <motion.div variants={fadeUp} custom={3} className="flex items-center gap-4">
-              <Link to="/map" className="btn-primary text-base">
+            <motion.div variants={fadeUp} custom={3} className="flex flex-wrap items-center gap-4 mb-12">
+              <Link to="/map" className="btn-primary text-base shadow-lg hover:shadow-terracotta-500/20">
                 {t('hero.cta')}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 8h10M9 4l4 4-4 4" />
                 </svg>
               </Link>
-              <Link to="/chat" className="btn-secondary text-base">
+              <Link to="/chat" className="btn-secondary text-base bg-white/80 backdrop-blur-sm hover:bg-white">
                 Talk to ORCA
               </Link>
             </motion.div>
+
+            {/* Source and verification strip */}
+            <motion.div
+              variants={fadeUp}
+              custom={4}
+              className="pt-6 border-t border-cream-300/80 flex flex-wrap items-center gap-6 text-xs text-charcoal-800/60"
+            >
+              <div className="flex items-center gap-1.5 font-medium">
+                <span>🛰️</span>
+                <span>Copernicus & NOAA Feeds</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <span>🐟</span>
+                <span>INCOIS PFZ Model</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <span>🛡️</span>
+                <span>200 NM Indian EEZ Guard</span>
+              </div>
+            </motion.div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ============ LIVE OCEAN TICKER ============ */}
+      <OceanTicker />
+
+      {/* ============ LIVE TELEMETRY DECK (MOVED BELOW HERO) ============ */}
+      <section className="py-16 md:py-20 bg-cream-50/90 border-b border-cream-200">
+        <div className="section-container max-w-5xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+            <div>
+              <span className="label-caps mb-2 block">Autonomous Telemetry Feed</span>
+              <h2 className="text-heading md:text-display-sm font-serif text-charcoal-900">
+                Live Arabian Sea Situational Awareness
+              </h2>
+            </div>
+            <p className="text-xs text-gray-500 max-w-xs font-sans">
+              Live automated data fusion across NOAA OISST, Copernicus Marine, and Open-Meteo models.
+            </p>
+          </div>
+          <HeroLiveWidget />
         </div>
       </section>
 
@@ -154,6 +196,9 @@ export default function Landing() {
         imagePosition="right"
         accentColor="#4CAF50"
       />
+
+      {/* ============ LIVE ROUTE REASONING SIMULATOR ============ */}
+      <LiveRouteSimulator />
 
       {/* ============ DARK BAND — Live Rerouting CTA ============ */}
       <section className="dark-band py-section">
@@ -246,6 +291,9 @@ export default function Landing() {
           </motion.div>
         </div>
       </section>
+
+      {/* ============ LIVE AGENT MESH MONITOR ============ */}
+      <LiveAgentMonitor />
 
       {/* ============ STATS BAND ============ */}
       <section className="py-section bg-cream-100">
@@ -347,7 +395,7 @@ function FeatureSection({
             imagePosition === 'left' ? 'lg:flex-row-reverse' : ''
           }`}
         >
-          {/* Image/visual placeholder */}
+          {/* Visual on left */}
           {imagePosition === 'left' && (
             <FeatureVisual index={index} accentColor={accentColor} />
           )}
@@ -407,7 +455,7 @@ function FeatureSection({
             </motion.ul>
           </div>
 
-          {/* Image on right */}
+          {/* Visual on right */}
           {imagePosition === 'right' && (
             <FeatureVisual index={index} accentColor={accentColor} />
           )}
@@ -418,114 +466,200 @@ function FeatureSection({
 }
 
 function FeatureVisual({ index, accentColor }: { index: number; accentColor: string }) {
-  const visuals = [
-    // PFZ Discovery — satellite imagery feel
-    {
-      bg: 'linear-gradient(135deg, #0a1628 0%, #1a3a5c 40%, #2E7D96 70%, #4db8a4 100%)',
-      content: (
-        <>
-          <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(ellipse at 60% 40%, rgba(46,125,150,0.5) 0%, transparent 50%), radial-gradient(ellipse at 30% 70%, rgba(77,184,164,0.4) 0%, transparent 40%)' }} />
-          {/* PFZ zone markers */}
-          <div className="absolute top-[30%] left-[40%] w-16 h-16 rounded-full border-2 border-emerald-400/60 flex items-center justify-center">
-            <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+  if (index === 1) {
+    // Feature 1: Authentic technical satellite oceanography display
+    return (
+      <motion.div
+        variants={fadeUp}
+        custom={2}
+        className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl bg-charcoal-950 border border-charcoal-800 font-sans p-6 flex flex-col justify-between"
+      >
+        <div className="flex items-center justify-between border-b border-white/10 pb-3 z-10">
+          <div>
+            <span className="text-[10px] font-mono uppercase text-cyan-400 tracking-wider">
+              SPECTRAL THERMAL FRONT SYNTHESIS
+            </span>
+            <p className="text-xs font-bold text-white">NOAA OISST + ESA OC-CCI [ARABIAN SEA SECTOR]</p>
           </div>
-          <div className="absolute top-[55%] left-[60%] w-12 h-12 rounded-full border-2 border-emerald-400/40 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          </div>
-          <div className="absolute top-[20%] left-[65%] w-10 h-10 rounded-full border-2 border-yellow-400/40 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-          </div>
-          {/* Label overlay */}
-          <div className="absolute bottom-4 left-4 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2">
-            <p className="text-[10px] text-white/60 uppercase tracking-wider">PFZ Candidates</p>
-            <p className="text-sm text-white font-medium">3 zones detected</p>
-          </div>
-        </>
-      ),
-    },
-    // Routing — path visualization
-    {
-      bg: 'linear-gradient(135deg, #f5e6d3 0%, #ddd0bc 100%)',
-      content: (
-        <>
-          {/* Grid pattern */}
-          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-          {/* Route path SVG */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 300">
-            {/* Dashed skeleton */}
-            <path d="M 60 250 Q 120 200 160 180 Q 200 160 240 120 Q 280 80 340 60" stroke="#C4703F" strokeWidth="3" fill="none" strokeDasharray="8 4" opacity="0.3" />
-            {/* Hazard-aware route */}
-            <path d="M 60 250 Q 100 220 130 200 Q 160 180 200 170 Q 240 160 270 130 Q 300 100 340 60" stroke="#C4703F" strokeWidth="3" fill="none" />
-            {/* Origin */}
-            <circle cx="60" cy="250" r="6" fill="#1A1A1A" />
-            <circle cx="60" cy="250" r="3" fill="white" />
-            {/* Destination */}
-            <circle cx="340" cy="60" r="6" fill="#2E7D32" />
-            <circle cx="340" cy="60" r="3" fill="white" />
-            {/* Hazard zones */}
-            <circle cx="200" cy="130" r="25" fill="#F44336" opacity="0.15" />
-            <circle cx="280" cy="170" r="20" fill="#FF9800" opacity="0.15" />
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            0.04° RES
+          </span>
+        </div>
+
+        {/* Vector isotherm contours */}
+        <div className="relative my-auto py-4">
+          <svg viewBox="0 0 400 180" className="w-full h-full" fill="none">
+            {/* Depth isobaths */}
+            <path d="M 0 40 Q 100 60 200 35 T 400 50" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+            <path d="M 0 90 Q 120 110 240 85 T 400 100" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+            <path d="M 0 140 Q 140 160 280 135 T 400 150" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+
+            {/* Thermal isotherms */}
+            <path d="M 40 10 Q 120 80 180 95 Q 260 110 360 40" stroke="#06B6D4" strokeWidth="2" />
+            <path d="M 80 20 Q 150 90 220 110 Q 300 130 380 70" stroke="#10B981" strokeWidth="2.5" />
+            <path d="M 120 30 Q 180 100 250 120 Q 330 140 400 90" stroke="#F59E0B" strokeWidth="1.5" />
+
+            {/* Detected PFZ Hotspot polygon */}
+            <polygon
+              points="190,75 250,85 270,125 210,130"
+              fill="#10B981"
+              fillOpacity="0.25"
+              stroke="#34D399"
+              strokeWidth="1.5"
+              strokeDasharray="4 2"
+            />
+
+            {/* Target Centroid */}
+            <circle cx="230" cy="105" r="4" fill="#FFFFFF" stroke="#059669" strokeWidth="2" />
+            <text x="242" y="102" fill="#E2E8F0" fontSize="10" fontWeight="bold">
+              PFZ ZONE 01 [SCORE 0.94]
+            </text>
+            <text x="242" y="115" fill="#94A3B8" fontSize="8">
+              SST FRONT ΔT: 0.78°C / 10km
+            </text>
           </svg>
-          {/* Label */}
-          <div className="absolute bottom-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-cream-300">
-            <p className="text-[10px] text-charcoal-900/50 uppercase tracking-wider">Hazard-Aware Route</p>
-            <p className="text-sm text-charcoal-900 font-medium">Kochi → PFZ Zone A</p>
-          </div>
-        </>
-      ),
-    },
-    // Dashboard — monitoring feel
-    {
-      bg: 'linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%)',
-      content: (
-        <>
-          {/* Dashboard cards */}
-          <div className="absolute top-6 left-6 right-6 space-y-3">
-            <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-3 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wider">ETA</p>
-                <p className="text-lg text-white font-semibold">3h 24m</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                <span className="text-emerald-400 text-sm">✓</span>
-              </div>
-            </div>
-            <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-3 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wider">Wave Height</p>
-                <p className="text-lg text-white font-semibold">1.2m</p>
-              </div>
-              <div className="flex items-end gap-0.5 h-6">
-                {[60, 80, 50, 90, 70, 85, 55].map((h, i) => (
-                  <div key={i} className="w-1 bg-terracotta-500 rounded-full" style={{ height: `${h}%` }} />
-                ))}
-              </div>
-            </div>
-            <div className="bg-amber-500/20 backdrop-blur rounded-lg px-4 py-3 border border-amber-500/30">
-              <div className="flex items-center gap-2">
-                <span className="text-amber-400">⚠</span>
-                <div>
-                  <p className="text-[10px] text-amber-300/60 uppercase tracking-wider">Reroute Alert</p>
-                  <p className="text-xs text-amber-200">Wind speed increasing on current path</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      ),
-    },
-  ]
+        </div>
 
-  const visual = visuals[index - 1]
+        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/10 text-[10px] text-gray-400 z-10">
+          <div>
+            <span className="block text-gray-500">Centroid</span>
+            <span className="font-mono text-gray-200">09°51'N, 75°36'E</span>
+          </div>
+          <div>
+            <span className="block text-gray-500">Chlorophyll-a</span>
+            <span className="font-mono text-emerald-400 font-bold">1.85 mg/m³</span>
+          </div>
+          <div>
+            <span className="block text-gray-500">Methodology</span>
+            <span className="font-mono text-gray-200">INCOIS OISST FRONT</span>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
 
+  if (index === 2) {
+    // Feature 2: Crisp nautical chart & hazard A* path
+    return (
+      <motion.div
+        variants={fadeUp}
+        custom={2}
+        className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl bg-cream-50 border border-cream-300 font-sans p-6 flex flex-col justify-between"
+      >
+        <div className="flex items-center justify-between border-b border-cream-200 pb-3">
+          <div>
+            <span className="text-[10px] font-mono uppercase text-terracotta-600 tracking-wider">
+              ELECTRONIC NAUTICAL PLOTTER
+            </span>
+            <p className="text-xs font-bold text-charcoal-900">A* Hazard-Cost Traversal Algorithm</p>
+          </div>
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-terracotta-100 text-terracotta-800 border border-terracotta-200">
+            EEZ ENFORCED
+          </span>
+        </div>
+
+        {/* Vector nautical track */}
+        <div className="relative my-auto py-2">
+          <svg viewBox="0 0 400 180" className="w-full h-full" fill="none">
+            {/* Nautical grid */}
+            <line x1="0" y1="45" x2="400" y2="45" stroke="#E5E0D2" strokeWidth="0.8" />
+            <line x1="0" y1="90" x2="400" y2="90" stroke="#E5E0D2" strokeWidth="0.8" />
+            <line x1="0" y1="135" x2="400" y2="135" stroke="#E5E0D2" strokeWidth="0.8" />
+            <line x1="100" y1="0" x2="100" y2="180" stroke="#E5E0D2" strokeWidth="0.8" />
+            <line x1="200" y1="0" x2="200" y2="180" stroke="#E5E0D2" strokeWidth="0.8" />
+            <line x1="300" y1="0" x2="300" y2="180" stroke="#E5E0D2" strokeWidth="0.8" />
+
+            {/* High Swell Hazard Polygon (>2.4m sector) */}
+            <circle cx="210" cy="80" r="45" fill="#EF4444" fillOpacity="0.12" stroke="#F87171" strokeWidth="1" strokeDasharray="4 3" />
+            <text x="180" y="78" fill="#DC2626" fontSize="9" fontWeight="bold">
+              ROUGH SWELL 2.6M
+            </text>
+
+            {/* Direct Line (Crosses Hazard - Rejected) */}
+            <line x1="60" y1="140" x2="330" y2="40" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 4" />
+
+            {/* ORCA Safe A* Path (Circumvents Hazard) */}
+            <path
+              d="M 60 140 Q 130 160 180 145 Q 260 135 300 90 L 330 40"
+              stroke="#C4703F"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+            />
+
+            {/* Origin & Dest */}
+            <circle cx="60" cy="140" r="5" fill="#1E293B" stroke="#FFFFFF" strokeWidth="2" />
+            <text x="35" y="162" fill="#1E293B" fontSize="9" fontWeight="bold">KOCHI PORT</text>
+
+            <circle cx="330" cy="40" r="5" fill="#059669" stroke="#FFFFFF" strokeWidth="2" />
+            <text x="300" y="25" fill="#059669" fontSize="9" fontWeight="bold">PFZ HOTSPOT</text>
+          </svg>
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-cream-200 text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-charcoal-800 font-bold">Safe Corridor Confirmed</span>
+          </div>
+          <span className="font-mono text-gray-500">Distance: 78.4 km · ETA: 4.2h</span>
+        </div>
+      </motion.div>
+    )
+  }
+
+  // Feature 3: Marine bridge instrument telemetry
   return (
     <motion.div
       variants={fadeUp}
       custom={2}
-      className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl"
-      style={{ background: visual.bg }}
+      className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-xl bg-charcoal-900 border border-charcoal-800 font-sans p-6 flex flex-col justify-between text-cream-100"
     >
-      {visual.content}
+      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div>
+          <span className="text-[10px] font-mono uppercase text-emerald-400 tracking-wider">
+            BRIDGE SENTINEL TELEMETRY
+          </span>
+          <p className="text-xs font-bold text-white">Active Voyage Corridor Watch</p>
+        </div>
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          60s CYCLE
+        </span>
+      </div>
+
+      {/* Live wave condition graph */}
+      <div className="space-y-3 my-auto py-2">
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-cream-400">Wave Height Telemetry Profile</span>
+          <span className="font-mono text-white font-bold">Current: 1.4m · Max: 2.1m</span>
+        </div>
+
+        {/* Technical SVG bar series */}
+        <div className="h-16 flex items-end gap-1.5 bg-black/40 p-2.5 rounded-lg border border-white/5">
+          {[35, 42, 48, 55, 62, 58, 70, 85, 78, 65, 52, 45, 38, 40].map((val, idx) => (
+            <div
+              key={idx}
+              className={`flex-1 rounded-sm transition-all ${
+                val > 75 ? 'bg-amber-500' : 'bg-cyan-500'
+              }`}
+              style={{ height: `${val}%` }}
+            />
+          ))}
+        </div>
+
+        <div className="bg-amber-500/15 border border-amber-500/30 rounded-lg p-2.5 text-xs text-amber-200 flex items-start gap-2">
+          <span>⚠️</span>
+          <div>
+            <span className="font-bold text-amber-100 block">Precautionary Course Adjustment:</span>
+            <p className="text-[11px] text-amber-200/90 leading-relaxed">
+              Wave forecast shows spike to 2.3m at Waypoint 4. Heading modified 12° West into smoother water.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-white/10 text-[10px] text-cream-400">
+        <span>Vessel MMSI: 419001234</span>
+        <span className="font-mono text-emerald-400 font-bold">AUTOMATED REROUTE ARMED</span>
+      </div>
     </motion.div>
   )
 }
@@ -556,3 +690,4 @@ function StatCard({ number, label }: { number: string; label: string }) {
     </motion.div>
   )
 }
+
