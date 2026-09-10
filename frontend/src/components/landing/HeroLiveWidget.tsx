@@ -70,7 +70,7 @@ export default function HeroLiveWidget() {
                 : 'border-transparent hover:text-charcoal-800'
               }`}
           >
-            <span>🌊</span> Sea State
+            Sea State
           </button>
           <button
             onClick={() => setActiveTab('pfz')}
@@ -79,7 +79,7 @@ export default function HeroLiveWidget() {
                 : 'border-transparent hover:text-charcoal-800'
               }`}
           >
-            <span>🐟</span> Live PFZ Radar
+            Live PFZ Radar
           </button>
           <button
             onClick={() => setActiveTab('fleet')}
@@ -88,7 +88,7 @@ export default function HeroLiveWidget() {
                 : 'border-transparent hover:text-charcoal-800'
               }`}
           >
-            <span>🛡️</span> Geofence
+            Geofence
           </button>
         </div>
 
@@ -155,12 +155,9 @@ export default function HeroLiveWidget() {
 
               {/* Status callout */}
               <div className="bg-emerald-50/90 rounded-xl p-3 border border-emerald-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🌤️</span>
-                  <div>
-                    <p className="text-xs font-bold text-emerald-950">Optimal Fishing Conditions</p>
-                    <p className="text-[11px] text-emerald-800">Clear navigation corridor out of Kochi Harbor up to 45 NM</p>
-                  </div>
+                <div>
+                  <p className="text-xs font-bold text-emerald-950">Optimal Fishing Conditions</p>
+                  <p className="text-[11px] text-emerald-800">Clear navigation corridor out of Kochi Harbor up to 45 NM</p>
                 </div>
                 <Link
                   to="/map"
@@ -183,9 +180,7 @@ export default function HeroLiveWidget() {
               <div className="bg-cream-50/90 rounded-xl p-3.5 border border-cream-200">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">
-                      🐟
-                    </span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                     <div>
                       <h4 className="text-xs font-bold text-charcoal-900">Kochi Shelf Front #1</h4>
                       <p className="text-[10px] text-gray-500">9.85°N, 75.60°E (34 NM West)</p>
@@ -216,13 +211,12 @@ export default function HeroLiveWidget() {
                   onClick={handleRouteToKochiPFZ}
                   className="w-full py-2 bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-colors shadow-sm"
                 >
-                  <span>🧭</span> Plan Safe Route to this Hotspot
+                  Plan Safe Route to this Hotspot
                 </Link>
               </div>
 
               <div className="bg-cream-50/60 rounded-xl p-2.5 border border-cream-200 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">📍</span>
                   <span className="font-medium text-charcoal-800">Wadge Bank Front (89% Confidence)</span>
                 </div>
                 <span className="text-[10px] text-gray-400">8.40°N, 76.85°E</span>
@@ -267,7 +261,7 @@ export default function HeroLiveWidget() {
                 to="/map"
                 className="w-full py-2 bg-charcoal-900 hover:bg-charcoal-800 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-colors shadow-sm"
               >
-                <span>🗺️</span> Open Fleet Geofence Monitor
+                Open Fleet Geofence Monitor
               </Link>
             </motion.div>
           )}
@@ -275,9 +269,7 @@ export default function HeroLiveWidget() {
 
         {/* Footer info strip */}
         <div className="px-5 py-2.5 bg-cream-50/60 border-t border-cream-200 text-[10px] text-gray-400 flex items-center justify-between">
-          <span className="flex items-center gap-1">
-            <span>🛰️</span> NOAA OISST · Open-Meteo · INCOIS Framework
-          </span>
+          <span>NOAA OISST · Open-Meteo · INCOIS Framework</span>
           <span className="text-emerald-700 font-semibold">100% Automated Fusion</span>
         </div>
       </div>

@@ -7,30 +7,19 @@ interface HazardProps {
   }
 }
 
-const hazardIcons: Record<string, string> = {
-  wave: '🌊',
-  wind: '💨',
-  cyclone: '🌀',
-  lightning: '⚡',
-  geofence: '🚫',
-  weather: '🌧️',
-  default: '⚠️',
-}
-
-const severityColors: Record<string, { bg: string; border: string; text: string }> = {
-  high: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700' },
-  medium: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
-  low: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
+const severityColors: Record<string, { bg: string; border: string; text: string; dot: string }> = {
+  high: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', dot: 'bg-red-500' },
+  medium: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', dot: 'bg-amber-500' },
+  low: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', dot: 'bg-blue-500' },
 }
 
 export default function HazardCard({ hazard }: HazardProps) {
-  const icon = hazardIcons[hazard.type.toLowerCase()] || hazardIcons.default
   const colors = severityColors[hazard.severity] || severityColors.medium
 
   return (
     <div className={`${colors.bg} rounded-lg px-3 py-2.5 border ${colors.border}`}>
-      <div className="flex items-start gap-2">
-        <span className="text-base flex-shrink-0">{icon}</span>
+      <div className="flex items-start gap-2.5">
+        <span className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${colors.dot}`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <p className={`text-xs font-semibold ${colors.text} capitalize`}>

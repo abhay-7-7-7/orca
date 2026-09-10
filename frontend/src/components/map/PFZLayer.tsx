@@ -78,8 +78,8 @@ function PFZPopup({
   return (
     <div className="font-sans text-sm min-w-[210px] p-0.5">
       <div className="flex items-center justify-between border-b border-cream-200 pb-1.5 mb-2">
-        <h4 className="font-bold text-charcoal-900 text-sm flex items-center gap-1.5">
-          <span>🐟</span> {zone.label || `Zone ${zone.id.slice(0, 6)}`}
+        <h4 className="font-bold text-charcoal-900 text-sm">
+          {zone.label || `Zone ${zone.id.slice(0, 6)}`}
         </h4>
         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
           {(zone.score * 100).toFixed(0)}% PFZ
@@ -109,7 +109,7 @@ function PFZPopup({
         onClick={() => onSelectRoute(zone)}
         className="w-full mt-3 px-2.5 py-1.5 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
       >
-        <span>🎯</span> Plan Safe Route Here
+        Plan Safe Route Here
       </button>
     </div>
   )

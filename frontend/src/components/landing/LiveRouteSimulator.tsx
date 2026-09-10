@@ -118,14 +118,14 @@ export default function LiveRouteSimulator() {
               <div className="flex items-center justify-between pb-3 border-b border-cream-200">
                 <div>
                   <span className="text-[11px] font-bold text-gray-400 uppercase">Origin Port</span>
-                  <p className="text-base font-bold text-charcoal-900 flex items-center gap-1.5 mt-0.5">
-                    <span>⚓</span> {selectedScenario.originName}
+                  <p className="text-base font-bold text-charcoal-900 mt-0.5">
+                    {selectedScenario.originName}
                   </p>
                 </div>
                 <div className="text-right">
                   <span className="text-[11px] font-bold text-gray-400 uppercase">Target Hotspot</span>
-                  <p className="text-base font-bold text-emerald-700 flex items-center gap-1.5 mt-0.5 justify-end">
-                    <span>🐟</span> {selectedScenario.destName.split('(')[0]}
+                  <p className="text-base font-bold text-emerald-700 mt-0.5 justify-end">
+                    {selectedScenario.destName.split('(')[0]}
                   </p>
                 </div>
               </div>
@@ -154,13 +154,10 @@ export default function LiveRouteSimulator() {
 
               {/* Reasoning Callout */}
               <div className="bg-amber-50/80 rounded-xl p-3.5 border border-amber-200 text-xs">
-                <div className="flex items-start gap-2.5">
-                  <span className="text-lg flex-shrink-0">🧠</span>
-                  <div>
-                    <span className="font-bold text-amber-900 block mb-0.5">Autonomous Hazard Reasoning:</span>
-                    <p className="text-amber-800 leading-relaxed">{selectedScenario.hazardAvoided}</p>
-                    <p className="text-[11px] text-emerald-700 font-semibold mt-1">Efficiency: {selectedScenario.fuelSaved}</p>
-                  </div>
+                <div>
+                  <span className="font-bold text-amber-900 block mb-0.5">Autonomous Hazard Reasoning:</span>
+                  <p className="text-amber-800 leading-relaxed">{selectedScenario.hazardAvoided}</p>
+                  <p className="text-[11px] text-emerald-700 font-semibold mt-1">Efficiency: {selectedScenario.fuelSaved}</p>
                 </div>
               </div>
             </div>

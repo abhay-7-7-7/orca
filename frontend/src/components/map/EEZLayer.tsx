@@ -41,8 +41,8 @@ export default function EEZLayer() {
       >
         <Tooltip sticky>
           <div className="font-sans text-xs">
-            <p className="font-bold text-blue-700 flex items-center gap-1">
-              <span>🇮🇳</span> Indian EEZ Limit (200 NM)
+            <p className="font-bold text-blue-700">
+              Indian EEZ Limit (200 NM)
             </p>
             <p className="text-gray-600 text-[11px]">
               Sovereign rights for fishing & resource exploitation. Beyond is High Seas.
@@ -64,8 +64,8 @@ export default function EEZLayer() {
       >
         <Tooltip sticky>
           <div className="font-sans text-xs">
-            <p className="font-bold text-amber-800 flex items-center gap-1">
-              <span>🏛️</span> Marine Protected Area (MPA)
+            <p className="font-bold text-amber-800">
+              Marine Protected Area (MPA)
             </p>
             <p className="text-gray-700 text-[11px]">
               Vembanad-Kochi Coastal Buffer. Commercial bottom trawling prohibited.

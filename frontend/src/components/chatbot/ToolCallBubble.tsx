@@ -229,7 +229,7 @@ export default function ToolCallBubble({ toolCall }: { toolCall: ToolCall }) {
                   if (k === 'note' && v) {
                     return (
                       <div key={k} className="col-span-full py-1 text-amber-800 bg-amber-50/80 border border-amber-200 rounded px-2 text-[11px]">
-                        ℹ️ {String(v)}
+                        {String(v)}
                       </div>
                     )
                   }

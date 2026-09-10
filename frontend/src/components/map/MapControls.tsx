@@ -66,14 +66,14 @@ export default function MapControls() {
       >
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold font-sans text-charcoal-900 flex items-center gap-1.5">
-            <span>🗺️</span> Marine Route Planner
+            Marine Route Planner
           </h3>
           <button
             onClick={handleQuickDemo}
             className="text-[10px] bg-terracotta-50 text-terracotta-600 hover:bg-terracotta-100 font-bold px-2 py-0.5 rounded border border-terracotta-200 transition-colors"
             title="1-Click demo: Kochi port to high-yield PFZ zone"
           >
-            ⚡ Quick Demo
+            Quick Demo
           </button>
         </div>
 
@@ -81,7 +81,7 @@ export default function MapControls() {
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-              <span>⚓</span> Origin (Harbor)
+              Origin (Harbor)
             </label>
             <button
               onClick={() => setMapClickMode(mapClickMode === 'set_origin' ? 'none' : 'set_origin')}
@@ -91,7 +91,7 @@ export default function MapControls() {
                   : 'text-blue-600 hover:bg-blue-50'
               }`}
             >
-              {mapClickMode === 'set_origin' ? 'Cancel Click' : '📍 Pick on Map'}
+              {mapClickMode === 'set_origin' ? 'Cancel Click' : 'Pick on Map'}
             </button>
           </div>
 
@@ -139,7 +139,7 @@ export default function MapControls() {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-              <span>🎯</span> Destination Target
+              Destination Target
             </label>
             <button
               onClick={() => setMapClickMode(mapClickMode === 'set_destination' ? 'none' : 'set_destination')}
@@ -149,7 +149,7 @@ export default function MapControls() {
                   : 'text-emerald-600 hover:bg-emerald-50'
               }`}
             >
-              {mapClickMode === 'set_destination' ? 'Cancel Click' : '🎯 Pick on Map'}
+              {mapClickMode === 'set_destination' ? 'Cancel Click' : 'Pick on Map'}
             </button>
           </div>
 
@@ -211,7 +211,7 @@ export default function MapControls() {
               Computing Safe Route...
             </>
           ) : (
-            '🧭 Compute Hazard-Aware Route'
+            'Compute Hazard-Aware Route'
           )}
         </button>
 
@@ -234,7 +234,7 @@ export default function MapControls() {
           className="w-full px-4 py-2.5 flex items-center justify-between text-xs font-bold font-sans text-charcoal-900 bg-cream-50/60 hover:bg-cream-100/60 transition-colors"
         >
           <span className="flex items-center gap-1.5">
-            <span>🥞</span> Map Layers & Overlays
+            Map Layers & Overlays
           </span>
           <svg
             width="14"
@@ -252,8 +252,8 @@ export default function MapControls() {
         {showLayers && (
           <div className="px-4 py-2.5 space-y-1.5 border-t border-cream-200 text-xs">
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>💨</span> Wind Streamlines (OpenSeaMap)
+              <span className="text-charcoal-800 font-medium">
+                Wind Streamlines (OpenSeaMap)
               </span>
               <input
                 type="checkbox"
@@ -264,8 +264,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>🧭</span> Wind Barbs
+              <span className="text-charcoal-800 font-medium">
+                Wind Barbs
               </span>
               <input
                 type="checkbox"
@@ -276,8 +276,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>⚓</span> OpenSeaMap Seamarks
+              <span className="text-charcoal-800 font-medium">
+                OpenSeaMap Seamarks
               </span>
               <input
                 type="checkbox"
@@ -288,8 +288,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>🌡️</span> Sea Surface Temp (SST)
+              <span className="text-charcoal-800 font-medium">
+                Sea Surface Temp (SST)
               </span>
               <input
                 type="checkbox"
@@ -300,8 +300,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>🌊</span> Wave Height Overlay
+              <span className="text-charcoal-800 font-medium">
+                Wave Height Overlay
               </span>
               <input
                 type="checkbox"
@@ -312,8 +312,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>🐟</span> Potential Fishing Zones (PFZ)
+              <span className="text-charcoal-800 font-medium">
+                Potential Fishing Zones (PFZ)
               </span>
               <input
                 type="checkbox"
@@ -324,8 +324,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>⚠️</span> Severe Hazard Alerts
+              <span className="text-charcoal-800 font-medium">
+                Severe Hazard Alerts
               </span>
               <input
                 type="checkbox"
@@ -336,8 +336,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>🇮🇳</span> Indian EEZ & MPAs
+              <span className="text-charcoal-800 font-medium">
+                Indian EEZ & MPAs
               </span>
               <input
                 type="checkbox"
@@ -348,8 +348,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>🚢</span> AIS Vessel Traffic
+              <span className="text-charcoal-800 font-medium">
+                AIS Vessel Traffic
               </span>
               <input
                 type="checkbox"
@@ -360,8 +360,8 @@ export default function MapControls() {
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
-              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>📍</span> Active Navigation Route
+              <span className="text-charcoal-800 font-medium">
+                Active Navigation Route
               </span>
               <input
                 type="checkbox"

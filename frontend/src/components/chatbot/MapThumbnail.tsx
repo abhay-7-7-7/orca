@@ -37,7 +37,7 @@ export default function MapThumbnail({ lat, lon, label }: MapThumbnailProps) {
         {/* Label */}
         <div className="absolute bottom-1.5 left-2 right-2">
           <p className="text-[10px] text-white font-medium truncate">
-            📍 {label || `${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E`}
+            {label || `${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E`}
           </p>
         </div>
         {/* Hover indicator */}

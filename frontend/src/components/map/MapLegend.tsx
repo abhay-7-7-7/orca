@@ -25,7 +25,7 @@ export default function MapLegend() {
           className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-semibold text-charcoal-900 bg-cream-50/80 hover:bg-cream-100/80 transition-colors border-b border-cream-200 cursor-pointer"
         >
           <span className="flex items-center gap-1.5">
-            <span className="text-sm">🧭</span> Map Legend
+            Map Legend
           </span>
           <svg
             width="14"
@@ -53,7 +53,7 @@ export default function MapLegend() {
               {layers.windStream && (
                 <div>
                   <div className="flex items-center justify-between font-medium text-charcoal-800 mb-1">
-                    <span>💨 Wind Streamlines</span>
+                    <span>Wind Streamlines</span>
                     <span className="text-[10px] text-cyan-700 font-bold">Flow Vectors</span>
                   </div>
                   <div className="h-2 rounded-full w-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 mb-1" />
@@ -68,7 +68,7 @@ export default function MapLegend() {
               {layers.sst && (
                 <div>
                   <div className="flex items-center justify-between font-medium text-charcoal-800 mb-1">
-                    <span>🌡️ SST Heatmap</span>
+                    <span>SST Heatmap</span>
                     <span className="text-[10px] text-gray-500">24°C – 32°C</span>
                   </div>
                   <div className="h-2 rounded-full w-full bg-gradient-to-r from-blue-600 via-emerald-400 via-amber-400 to-red-600 mb-1" />
@@ -83,7 +83,7 @@ export default function MapLegend() {
               {layers.waves && (
                 <div>
                   <div className="flex items-center justify-between font-medium text-charcoal-800 mb-1">
-                    <span>🌊 Wave Swell</span>
+                    <span>Wave Swell</span>
                     <span className="text-[10px] text-gray-500">Meters</span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-charcoal-700">
@@ -103,9 +103,7 @@ export default function MapLegend() {
               {/* Maritime Features */}
               <div className="pt-2 border-t border-cream-200 space-y-1 text-[10px] text-charcoal-700">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[8px] font-bold">
-                    🐟
-                  </span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
                   <span>PFZ Potential Fishing Zone</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -117,7 +115,7 @@ export default function MapLegend() {
                   <span>ORCA Navigational Route</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs">🌊</span>
+                  <span className="w-2.5 h-2.5 rounded bg-blue-500 inline-block" />
                   <span>Rough Swell Surge (&gt;2.2m Train)</span>
                 </div>
               </div>

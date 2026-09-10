@@ -72,8 +72,8 @@ export default function WindLayer() {
           >
             <Tooltip direction="top" offset={[0, -18]}>
               <div className="font-sans text-xs p-0.5 min-w-[140px]">
-                <p className="font-bold text-charcoal-900 flex items-center gap-1">
-                  <span>💨</span> Wind Vector
+                <p className="font-bold text-charcoal-900">
+                  Wind Vector
                 </p>
                 <div className="mt-1 space-y-0.5 text-charcoal-800">
                   <p className="flex justify-between">

@@ -22,8 +22,8 @@ export default function RouteLayer() {
         >
           <Popup>
             <div className="font-sans text-xs min-w-[150px]">
-              <p className="font-bold text-charcoal-900 flex items-center gap-1">
-                <span>⚓</span> Departure Harbor / Origin
+              <p className="font-bold text-charcoal-900">
+                Departure Harbor / Origin
               </p>
               <p className="text-gray-500 mt-1">
                 {origin.lat.toFixed(4)}°N, {origin.lon.toFixed(4)}°E
@@ -47,8 +47,8 @@ export default function RouteLayer() {
         >
           <Popup>
             <div className="font-sans text-xs min-w-[150px]">
-              <p className="font-bold text-charcoal-900 flex items-center gap-1">
-                <span>🎯</span> Destination Target
+              <p className="font-bold text-charcoal-900">
+                Destination Target
               </p>
               <p className="text-gray-500 mt-1">
                 {destination.lat.toFixed(4)}°N, {destination.lon.toFixed(4)}°E
@@ -134,8 +134,8 @@ export default function RouteLayer() {
             >
               <Popup>
                 <div className="font-sans text-xs">
-                  <p className="font-bold text-amber-800 flex items-center gap-1">
-                    <span>⚠️</span> {hazard.type}
+                  <p className="font-bold text-amber-800">
+                    {hazard.type}
                   </p>
                   <p className="text-gray-700 mt-1">{hazard.description}</p>
                 </div>

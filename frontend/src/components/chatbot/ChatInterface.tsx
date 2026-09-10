@@ -10,6 +10,7 @@ import ContextChips from './ContextChips'
 import LanguageBadge from './LanguageBadge'
 import VoiceIndicator from './VoiceIndicator'
 import TypingIndicator from './TypingIndicator'
+import { Waves } from 'lucide-react'
 
 interface ChatInterfaceProps {
   mode: 'overlay' | 'fullpage'
@@ -93,7 +94,7 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
             className="text-center py-12"
           >
             <div className="w-16 h-16 rounded-full bg-cream-200 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🌊</span>
+              <Waves className="w-7 h-7 text-ocean-600" />
             </div>
             <h4 className="text-base font-semibold text-charcoal-900 mb-2 font-serif">
               Ask ORCA anything

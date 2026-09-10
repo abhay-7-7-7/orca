@@ -48,7 +48,7 @@ export function useChatStream() {
           addContextChip({
             id: 'location',
             type: 'location',
-            label: `📍 ${response.context.last_location.label || `${response.context.last_location.lat.toFixed(2)}, ${response.context.last_location.lon.toFixed(2)}`}`,
+            label: response.context.last_location.label || `${response.context.last_location.lat.toFixed(2)}, ${response.context.last_location.lon.toFixed(2)}`,
             data: response.context.last_location as unknown as Record<string, unknown>,
           })
         }
@@ -57,7 +57,7 @@ export function useChatStream() {
           addContextChip({
             id: 'route',
             type: 'route',
-            label: `🗺️ Route: ${response.context.last_route_id}`,
+            label: `Route: ${response.context.last_route_id}`,
             data: { route_id: response.context.last_route_id },
           })
         }

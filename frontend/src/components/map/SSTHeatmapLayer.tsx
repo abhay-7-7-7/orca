@@ -45,8 +45,8 @@ export default function SSTHeatmapLayer() {
             <Tooltip>
               <div className="font-sans text-xs p-1 min-w-[150px]">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-1 mb-1">
-                  <p className="font-bold text-charcoal-900 flex items-center gap-1">
-                    <span>🌡️</span> Thermal SST
+                  <p className="font-bold text-charcoal-900">
+                    Thermal SST
                   </p>
                   <span
                     className="px-1.5 py-0.5 rounded text-[10px] font-bold text-white"
@@ -65,7 +65,7 @@ export default function SSTHeatmapLayer() {
                   </p>
                   {isUpwelling && (
                     <p className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded mt-1">
-                      🌿 Nutrient-Rich Upwelling Front
+                      Nutrient-Rich Upwelling Front
                     </p>
                   )}
                   <p className="text-[10px] text-gray-400 mt-0.5">

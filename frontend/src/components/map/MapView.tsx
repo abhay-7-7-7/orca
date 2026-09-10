@@ -103,7 +103,6 @@ export default function MapView() {
       {/* Click mode banner indicator */}
       {mapClickMode !== 'none' && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1002] bg-terracotta-500 text-white px-4 py-2 rounded-full shadow-lg text-xs font-semibold flex items-center gap-2 animate-bounce">
-          <span>🎯</span>
           {mapClickMode === 'set_origin'
             ? 'Click anywhere on the sea to set ORIGIN harbor'
             : 'Click anywhere on the sea to set DESTINATION point'}

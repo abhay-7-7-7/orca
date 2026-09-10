@@ -56,19 +56,8 @@ interface BackendChatResponse {
 /**
  * Map a backend tool-call label to a human-friendly display icon.
  */
-function toolIcon(toolName: string): string {
-  const icons: Record<string, string> = {
-    marine_weather: '🌊',
-    pfz_synthesis: '🐟',
-    cyclone_disaster: '🌀',
-    lightning: '⚡',
-    vessel_ais: '🚢',
-    geofence: '🛡️',
-    sst_chlorophyll: '🌡️',
-    tide: '🌊',
-    routing: '🗺️',
-  }
-  return icons[toolName] || '🔧'
+function toolIcon(_toolName: string): string {
+  return ''
 }
 
 /**

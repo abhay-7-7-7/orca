@@ -11,9 +11,7 @@ export default function RouteInfo({ route }: { route: ComputedRoute }) {
   return (
     <div className="bg-cream-50 rounded-xl p-4 border border-cream-200">
       <h3 className="text-sm font-semibold text-charcoal-900 mb-4 flex items-center gap-2">
-        <span className="w-6 h-6 rounded-full bg-terracotta-500/10 flex items-center justify-center text-xs">
-          🗺️
-        </span>
+        <span className="w-2.5 h-2.5 rounded-full bg-terracotta-500" />
         Route Information
       </h3>
 
@@ -104,7 +102,7 @@ export default function RouteInfo({ route }: { route: ComputedRoute }) {
         {route.warnings?.length > 0 && (
           <div className="bg-red-50 rounded-lg px-3 py-2 mt-2 border border-red-200">
             <p className="text-xs text-red-700 font-medium">
-              ⚠️ {route.warnings.join(', ')}
+              {route.warnings.join(', ')}
             </p>
           </div>
         )}

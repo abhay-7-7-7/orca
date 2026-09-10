@@ -100,7 +100,6 @@ function createSwellBadgeIcon(waveHeight: number, directionDeg: number) {
         transform: translate(-50%, -50%);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       ">
-        <span style="font-size: 13px; line-height: 1;">🌊</span>
         <span style="color: ${textColor}; font-weight: 800;">${waveHeight.toFixed(1)}m SWELL</span>
         <span style="
           display: inline-block;
@@ -254,16 +253,13 @@ export default function HazardOverlay() {
                 <div className="font-sans text-xs p-1 min-w-[240px] max-w-[280px]">
                   {/* Header */}
                   <div className="flex items-center justify-between border-b border-gray-200 pb-2 mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base">🌊</span>
-                      <div>
-                        <h4 className="font-bold text-charcoal-900 text-xs leading-none">
-                          {cluster.name}
-                        </h4>
-                        <span className="text-[10px] text-gray-500 font-mono">
-                          INCOIS Swell Surge Advisory
-                        </span>
-                      </div>
+                    <div>
+                      <h4 className="font-bold text-charcoal-900 text-xs leading-none">
+                        {cluster.name}
+                      </h4>
+                      <span className="text-[10px] text-gray-500 font-mono">
+                        INCOIS Swell Surge Advisory
+                      </span>
                     </div>
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
@@ -305,7 +301,7 @@ export default function HazardOverlay() {
                   {/* Vessel Navigational Advisory */}
                   <div className="space-y-1 text-[11px] text-gray-600 mb-3">
                     <p className="font-semibold text-charcoal-800">
-                      🛡️ Automated ORCA Safety Protocol:
+                      Automated ORCA Safety Protocol:
                     </p>
                     <p className="text-[10px] leading-relaxed text-gray-600 bg-white p-1.5 rounded border border-gray-100">
                       Long-period swell ({cluster.periodSec}s) poses beam-sea capsizing danger to mechanised craft &lt;20m. ORCA’s A* routing automatically applies a <strong>0.75 hazard penalty</strong> to circumvent this corridor.
@@ -323,7 +319,7 @@ export default function HazardOverlay() {
                     }}
                     className="w-full py-1.5 bg-charcoal-900 hover:bg-charcoal-800 text-white rounded-md text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                   >
-                    <span>🧭</span> Plot Safe Passage Outside Zone
+                    Plot Safe Passage Outside Zone
                   </button>
                 </div>
               </Popup>

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { AlertTriangle } from 'lucide-react'
 import type { RerouteCheck } from '../../services/routing'
 
 export default function RerouteBanner({ rerouteStatus }: { rerouteStatus: RerouteCheck }) {
@@ -12,7 +13,7 @@ export default function RerouteBanner({ rerouteStatus }: { rerouteStatus: Rerout
     >
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-          <span className="text-amber-600 text-lg">⚠️</span>
+          <AlertTriangle className="w-4 h-4 text-amber-600" />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-amber-800 mb-1">

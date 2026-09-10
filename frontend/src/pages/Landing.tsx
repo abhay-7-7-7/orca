@@ -616,8 +616,7 @@ function FeatureVisual({ index, accentColor }: { index: number; accentColor: str
           ))}
         </div>
 
-        <div className="bg-amber-500/15 border border-amber-500/30 rounded-lg p-2.5 text-xs text-amber-200 flex items-start gap-2">
-          <span>⚠️</span>
+        <div className="bg-amber-500/15 border border-amber-500/30 rounded-lg p-2.5 text-xs text-amber-200">
           <div>
             <span className="font-bold text-amber-100 block">Precautionary Course Adjustment:</span>
             <p className="text-[11px] text-amber-200/90 leading-relaxed">

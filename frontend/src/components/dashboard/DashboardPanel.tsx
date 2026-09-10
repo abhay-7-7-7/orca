@@ -52,9 +52,7 @@ export default function DashboardPanel() {
             {selectedPFZ && (
               <div className="bg-cream-50 rounded-xl p-4 border border-cream-200">
                 <h3 className="text-sm font-semibold text-charcoal-900 mb-3 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs">
-                    🐟
-                  </span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   PFZ Zone {selectedPFZ.label || selectedPFZ.id.slice(0, 6)}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
