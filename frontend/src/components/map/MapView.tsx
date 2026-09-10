@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { useEffect, useRef, useMemo } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { useMapStore } from '../../store/mapStore'
 import { useRouteStore } from '../../store/routeStore'
+import { useChatStore } from '../../store/chatStore'
 import PFZLayer from './PFZLayer'
 import HazardOverlay from './HazardOverlay'
 import EEZLayer from './EEZLayer'
@@ -210,6 +211,7 @@ export default function MapView() {
         <MapEventHandler />
         <MapScaleControl />
         <MapViewController />
+        <ChatTargetMarker />
 
         {/* Interactive ORCA Marine layers (hardware canvas accelerated) */}
         {layers.eez && <EEZLayer />}
