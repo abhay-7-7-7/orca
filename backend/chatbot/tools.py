@@ -127,17 +127,50 @@ async def execute_tool(name: str, arguments: dict) -> dict[str, Any]:
 
 async def _get_weather_at(lat: float, lon: float) -> dict:
     from backend.fusion.world_state import get_world_state_store
+    from backend.core.config import get_settings
     store = get_world_state_store()
     cell = store.get_cell(lat, lon)
-    return {
-        "lat": lat, "lon": lon,
-        "wave_height_m": cell.wave_height_m,
-        "wind_speed_kmh": cell.wind_speed_kmh,
-        "sea_state": cell.sea_state,
-        "sst_celsius": cell.sst_celsius,
-        "cyclone_risk": cell.cyclone_risk,
-        "lightning_risk": cell.lightning_risk,
-    }
+    
+    # If world state cell is already populated with weather data, return it
+    if cell.wave_height_m is not None and cell.wind_speed_kmh is not None:
+        return {
+            "lat": lat, "lon": lon,
+            "wave_height_m": cell.wave_height_m,
+            "wind_speed_kmh": cell.wind_speed_kmh,
+            "sea_state": cell.sea_state,
+            "sst_celsius": cell.sst_celsius,
+            "cyclone_risk": cell.cyclone_risk,
+            "lightning_risk": cell.lightning_risk,
+        }
+    
+    # Otherwise fetch live point weather on demand from Open-Meteo
+    try:
+        from backend.agents.marine_weather.agent import MarineWeatherAgent
+        from backend.models.common import GeoPoint
+        agent = MarineWeatherAgent()
+        settings = get_settings()
+        cond = await agent._fetch_point_weather(settings, GeoPoint(lat=lat, lon=lon))
+        return {
+            "lat": lat, "lon": lon,
+            "wave_height_m": cond.wave_height_m,
+            "wind_speed_kmh": cond.wind_speed_kmh,
+            "sea_state": cond.sea_state,
+            "sst_celsius": cell.sst_celsius or 28.2,
+            "cyclone_risk": cell.cyclone_risk or 0.0,
+            "lightning_risk": cell.lightning_risk or 0.0,
+        }
+    except Exception as exc:
+        logger.warning("Live point weather fetch fallback failed: %s", exc)
+        return {
+            "lat": lat, "lon": lon,
+            "wave_height_m": cell.wave_height_m,
+            "wind_speed_kmh": cell.wind_speed_kmh,
+            "sea_state": cell.sea_state,
+            "sst_celsius": cell.sst_celsius,
+            "cyclone_risk": cell.cyclone_risk,
+            "lightning_risk": cell.lightning_risk,
+        }
+
 
 
 async def _get_pfz_zones(min_lat, max_lat, min_lon, max_lon) -> dict:
