@@ -1,0 +1,43 @@
+# ORCA Backend Dependencies
+# Python 3.11+ required
+
+# --- Web framework ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+
+# --- Data validation & config ---
+pydantic>=2.0
+pydantic-settings>=2.0
+python-dotenv>=1.0.0
+
+# --- HTTP client ---
+httpx>=0.27.0
+
+# --- Ocean/gridded data ---
+xarray>=2024.1.0
+netCDF4>=1.7.0
+numpy>=1.26.0
+scipy>=1.12.0
+
+# --- Geospatial ---
+geopandas>=1.0.0
+shapely>=2.0.0
+pyproj>=3.6.0
+
+# --- Routing ---
+searoute>=1.2.0
+networkx>=3.2
+
+# --- Scheduling ---
+apscheduler>=3.10.0
+
+# --- LLM (chatbot) ---
+anthropic>=0.39.0
+
+# --- Disaster alerts ---
+aiohttp>=3.9.0
+
+# --- Testing ---
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+pytest-httpx>=0.30.0
