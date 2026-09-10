@@ -25,8 +25,10 @@ interface MapState {
   /* Layer visibility */
   layers: {
     seamarks: boolean
-    wind: boolean
+    windStream: boolean
+    windBarbs: boolean
     sst: boolean
+    waves: boolean
     pfz: boolean
     hazards: boolean
     vessels: boolean
@@ -46,9 +48,9 @@ interface MapState {
 }
 
 export const useMapStore = create<MapState>((set) => ({
-  /* Default view: Indian west coast, centered on Kerala */
-  center: [9.85, 75.85],
-  zoom: 8,
+  /* Default view: Panoramic view of Indian subcontinent & Arabian Sea as in OpenSeaMap */
+  center: [12.5, 76.5],
+  zoom: 6,
   setView: (center, zoom) => set({ center, zoom }),
 
   pfzZones: [],
@@ -64,8 +66,10 @@ export const useMapStore = create<MapState>((set) => ({
 
   layers: {
     seamarks: true,
-    wind: true,
-    sst: true,
+    windStream: true, // Matches 2nd uploaded image: flowing streamlines
+    windBarbs: false,
+    sst: false,
+    waves: false,
     pfz: true,
     hazards: true,
     vessels: true,

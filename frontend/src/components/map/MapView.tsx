@@ -5,8 +5,6 @@ import { useMapStore } from '../../store/mapStore'
 import { useRouteStore } from '../../store/routeStore'
 import PFZLayer from './PFZLayer'
 import HazardOverlay from './HazardOverlay'
-import WindLayer from './WindLayer'
-import SSTHeatmapLayer from './SSTHeatmapLayer'
 import EEZLayer from './EEZLayer'
 import RouteLayer from './RouteLayer'
 import VesselLayer from './VesselLayer'
@@ -89,8 +87,8 @@ export default function MapView() {
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1002] bg-terracotta-500 text-white px-4 py-2 rounded-full shadow-lg text-xs font-semibold flex items-center gap-2 animate-bounce">
           <span>🎯</span>
           {mapClickMode === 'set_origin'
-            ? 'Click anywhere on the water to set ORIGIN point'
-            : 'Click anywhere on the water to set DESTINATION point'}
+            ? 'Click anywhere on the sea to set ORIGIN harbor'
+            : 'Click anywhere on the sea to set DESTINATION point'}
         </div>
       )}
 
@@ -108,12 +106,60 @@ export default function MapView() {
           maxZoom={18}
         />
 
-        {/* OpenSeaMap seamark navigation overlay */}
+        {/* OpenPortGuide / OpenSeaMap Wind Streamlines (Flowing aerodynamic vectors as in OpenSeaMap) */}
+        {layers.windStream && (
+          <TileLayer
+            url="https://weather.openportguide.de/tiles/actual/wind_stream/0h/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://openportguide.de">OpenPortGuide Weather</a>'
+            maxNativeZoom={7}
+            maxZoom={18}
+            opacity={0.88}
+            zIndex={350}
+          />
+        )}
+
+        {/* OpenPortGuide Wind Barbs */}
+        {layers.windBarbs && (
+          <TileLayer
+            url="https://weather.openportguide.de/tiles/actual/wind_barb/0h/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://openportguide.de">OpenPortGuide</a>'
+            maxNativeZoom={7}
+            maxZoom={18}
+            opacity={0.85}
+            zIndex={355}
+          />
+        )}
+
+        {/* OpenPortGuide Sea Surface Temperature (SST Thermal Heatmap) */}
+        {layers.sst && (
+          <TileLayer
+            url="https://weather.openportguide.de/tiles/actual/sea_surface_temperature/0h/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://openportguide.de">OpenPortGuide SST</a>'
+            maxNativeZoom={7}
+            maxZoom={18}
+            opacity={0.65}
+            zIndex={320}
+          />
+        )}
+
+        {/* OpenPortGuide Significant Wave Height */}
+        {layers.waves && (
+          <TileLayer
+            url="https://weather.openportguide.de/tiles/actual/significant_wave_height/0h/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://openportguide.de">OpenPortGuide Wave</a>'
+            maxNativeZoom={7}
+            maxZoom={18}
+            opacity={0.65}
+            zIndex={330}
+          />
+        )}
+
+        {/* OpenSeaMap Seamark Navigation overlay (Lighthouses, buoys, beacons, port signals) */}
         {layers.seamarks && (
           <TileLayer
             url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
             attribution='&copy; <a href="http://www.openseamap.org">OpenSeaMap</a>'
-            opacity={0.85}
+            opacity={0.95}
             zIndex={450}
             maxZoom={18}
           />
@@ -124,11 +170,9 @@ export default function MapView() {
         <MapScaleControl />
         <MapViewController />
 
-        {/* Marine layers */}
-        {layers.sst && <SSTHeatmapLayer />}
-        {layers.hazards && <HazardOverlay />}
+        {/* Interactive ORCA Marine layers */}
         {layers.eez && <EEZLayer />}
-        {layers.wind && <WindLayer />}
+        {layers.hazards && <HazardOverlay />}
         {layers.pfz && <PFZLayer />}
         {layers.route && <RouteLayer />}
         {layers.vessels && <VesselLayer />}

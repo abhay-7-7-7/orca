@@ -253,6 +253,30 @@ export default function MapControls() {
           <div className="px-4 py-2.5 space-y-1.5 border-t border-cream-200 text-xs">
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
               <span className="flex items-center gap-2 text-charcoal-800 font-medium">
+                <span>💨</span> Wind Streamlines (OpenSeaMap)
+              </span>
+              <input
+                type="checkbox"
+                checked={layers.windStream}
+                onChange={() => toggleLayer('windStream')}
+                className="rounded border-cream-300 text-terracotta-500 focus:ring-terracotta-500 cursor-pointer"
+              />
+            </label>
+
+            <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
+              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
+                <span>🧭</span> Wind Barbs
+              </span>
+              <input
+                type="checkbox"
+                checked={layers.windBarbs}
+                onChange={() => toggleLayer('windBarbs')}
+                className="rounded border-cream-300 text-terracotta-500 focus:ring-terracotta-500 cursor-pointer"
+              />
+            </label>
+
+            <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
+              <span className="flex items-center gap-2 text-charcoal-800 font-medium">
                 <span>⚓</span> OpenSeaMap Seamarks
               </span>
               <input
@@ -265,24 +289,24 @@ export default function MapControls() {
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
               <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>💨</span> Wind Vectors & Speed
+                <span>🌡️</span> Sea Surface Temp (SST)
               </span>
               <input
                 type="checkbox"
-                checked={layers.wind}
-                onChange={() => toggleLayer('wind')}
+                checked={layers.sst}
+                onChange={() => toggleLayer('sst')}
                 className="rounded border-cream-300 text-terracotta-500 focus:ring-terracotta-500 cursor-pointer"
               />
             </label>
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
               <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>🌡️</span> SST Thermal Heatmap
+                <span>🌊</span> Wave Height Overlay
               </span>
               <input
                 type="checkbox"
-                checked={layers.sst}
-                onChange={() => toggleLayer('sst')}
+                checked={layers.waves}
+                onChange={() => toggleLayer('waves')}
                 className="rounded border-cream-300 text-terracotta-500 focus:ring-terracotta-500 cursor-pointer"
               />
             </label>
@@ -301,7 +325,7 @@ export default function MapControls() {
 
             <label className="flex items-center justify-between py-1 cursor-pointer hover:bg-cream-50/80 px-1 rounded">
               <span className="flex items-center gap-2 text-charcoal-800 font-medium">
-                <span>🌊</span> Wave & Hazard Risk
+                <span>⚠️</span> Severe Hazard Alerts
               </span>
               <input
                 type="checkbox"
