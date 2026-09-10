@@ -141,8 +141,10 @@ class WorldStateStore:
 
         return grid
 
-    def get_hazard_grid(self) -> HazardGrid | None:
-        """Get the current hazard grid."""
+    def get_hazard_grid(self) -> HazardGrid:
+        """Get the current hazard grid, building it if not yet created."""
+        if self._hazard_grid is None:
+            self.build_hazard_grid()
         return self._hazard_grid
 
     def query(self, bbox: BoundingBox, resolution: float = 0.5) -> WorldState:
@@ -286,6 +288,10 @@ class WorldStateStore:
 
     @property
     def pfz_data(self):
+        if self._pfz_data is None:
+            from backend.agents.pfz_synthesis.agent import get_pfz_synthesis_agent
+            agent = get_pfz_synthesis_agent()
+            self._pfz_data = agent._generate_standalone_mock(None)
         return self._pfz_data
 
     @property

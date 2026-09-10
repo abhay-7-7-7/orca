@@ -34,16 +34,17 @@ TOOLS = [
     },
     {
         "name": "get_pfz_zones",
-        "description": "Get Potential Fishing Zone candidates for a region. Returns ranked PFZ zones with scores based on SST gradient and chlorophyll concentration.",
+        "description": "Get Potential Fishing Zone candidates near a port or coordinate, or within a region. Returns ranked PFZ zones with exact distance in km, compass direction, SST gradient, and chlorophyll.",
         "parameters": {
             "type": "object",
             "properties": {
-                "min_lat": {"type": "number", "description": "Minimum latitude of search area"},
-                "max_lat": {"type": "number", "description": "Maximum latitude of search area"},
-                "min_lon": {"type": "number", "description": "Minimum longitude of search area"},
-                "max_lon": {"type": "number", "description": "Maximum longitude of search area"},
+                "near_lat": {"type": "number", "description": "Latitude of departure port or reference location (e.g. 9.93 for Kochi)"},
+                "near_lon": {"type": "number", "description": "Longitude of departure port or reference location (e.g. 76.27 for Kochi)"},
+                "min_lat": {"type": "number", "description": "Minimum latitude of search area (optional)"},
+                "max_lat": {"type": "number", "description": "Maximum latitude of search area (optional)"},
+                "min_lon": {"type": "number", "description": "Minimum longitude of search area (optional)"},
+                "max_lon": {"type": "number", "description": "Maximum longitude of search area (optional)"},
             },
-            "required": ["min_lat", "max_lat", "min_lon", "max_lon"],
         },
     },
     {
@@ -101,23 +102,22 @@ async def execute_tool(name: str, arguments: dict) -> dict[str, Any]:
     """Execute a tool call and return its result as a dict."""
     try:
         if name == "get_weather_at":
-            return await _get_weather_at(arguments["lat"], arguments["lon"])
+            return await _get_weather_at(float(arguments["lat"]), float(arguments["lon"]))
         elif name == "get_pfz_zones":
-            return await _get_pfz_zones(
-                arguments["min_lat"], arguments["max_lat"],
-                arguments["min_lon"], arguments["max_lon"],
-            )
+            return await _get_pfz_zones(**arguments)
         elif name == "compute_route":
             return await _compute_route(
-                arguments["origin_lat"], arguments["origin_lon"],
-                arguments["dest_lat"], arguments["dest_lon"],
+                float(arguments.get("origin_lat", 9.93)),
+                float(arguments.get("origin_lon", 76.27)),
+                float(arguments["dest_lat"]),
+                float(arguments["dest_lon"]),
             )
         elif name == "check_geofence":
-            return await _check_geofence(arguments["lat"], arguments["lon"])
+            return await _check_geofence(float(arguments["lat"]), float(arguments["lon"]))
         elif name == "get_active_alerts":
             return await _get_active_alerts()
         elif name == "get_tide_info":
-            return await _get_tide_info(arguments["lat"], arguments["lon"])
+            return await _get_tide_info(float(arguments["lat"]), float(arguments["lon"]))
         else:
             return {"error": f"Unknown tool: {name}"}
     except Exception as exc:
