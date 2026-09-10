@@ -23,6 +23,11 @@ class MarineConditions(BaseModel):
     temperature_celsius: float = 0.0
     visibility_km: float = 10.0
     sea_state: str = "calm"  # calm, slight, moderate, rough, very_rough, high, phenomenal
+    # Copernicus Marine extensions
+    current_speed_knots: float = Field(0.0, description="Surface current speed in knots")
+    current_direction_deg: float = Field(0.0, description="Surface current direction in degrees")
+    sea_level_anomaly_m: Optional[float] = Field(None, description="Sea level anomaly in meters")
+    salinity_psu: Optional[float] = Field(None, description="Sea water salinity in PSU (available-but-unused)")
 
 
 class BuoyReading(BaseModel):
