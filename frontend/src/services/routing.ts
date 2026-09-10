@@ -112,6 +112,46 @@ function normalizeRoute(raw: any): ComputedRoute {
   // Build path array from waypoints for Leaflet polyline rendering
   const path: [number, number][] = waypoints.map((w) => [w.lat, w.lon])
 
+  // Extract structured hazards along path
+  const hazards_along_path: RouteHazard[] = []
+  waypoints.forEach((w) => {
+    if (w.hazards && w.hazards.length > 0) {
+      w.hazards.forEach((h: string) => {
+        const lower = h.toLowerCase()
+        const severity = lower.includes('cyclone') || lower.includes('extreme') || lower.includes('high')
+          ? 'high'
+          : 'medium'
+        let type = 'weather'
+        if (lower.includes('wave') || lower.includes('rough')) type = 'wave'
+        else if (lower.includes('wind') || lower.includes('gust')) type = 'wind'
+        else if (lower.includes('cyclone')) type = 'cyclone'
+        else if (lower.includes('lightning')) type = 'lightning'
+        else if (lower.includes('eez') || lower.includes('mpa') || lower.includes('boundary')) type = 'geofence'
+
+        hazards_along_path.push({
+          type,
+          location: { lat: w.lat, lon: w.lon },
+          severity,
+          description: h,
+        })
+      })
+    } else if ((w.wave_height ?? 0) >= 3.0) {
+      hazards_along_path.push({
+        type: 'wave',
+        location: { lat: w.lat, lon: w.lon },
+        severity: (w.wave_height ?? 0) >= 4.0 ? 'high' : 'medium',
+        description: `High wave alert (${w.wave_height?.toFixed(1)}m)`,
+      })
+    } else if ((w.wind_speed ?? 0) >= 45) {
+      hazards_along_path.push({
+        type: 'wind',
+        location: { lat: w.lat, lon: w.lon },
+        severity: (w.wind_speed ?? 0) >= 60 ? 'high' : 'medium',
+        description: `High wind alert (${w.wind_speed?.toFixed(0)} km/h)`,
+      })
+    }
+  })
+
   return {
     id: raw.route_id || raw.id || `route-${Date.now()}`,
     origin: raw.origin,
@@ -122,6 +162,10 @@ function normalizeRoute(raw: any): ComputedRoute {
     estimated_time_hours: raw.estimated_time_hours ?? 0,
     total_cost: raw.total_cost ?? 0,
     hazard_summary: raw.hazard_summary ?? null,
+    hazards_along_path,
+    geofence_violations: (raw.warnings || []).filter((w: string) =>
+      w.toLowerCase().includes('eez') || w.toLowerCase().includes('mpa')
+    ),
     is_safe: raw.is_safe ?? true,
     warnings: raw.warnings || [],
     algorithm: raw.algorithm || 'A* with hazard-cost overlay',
@@ -170,6 +214,8 @@ function calculateFallbackRoute(origin: PointCoord, destination: PointCoord): Co
     estimated_time_hours,
     total_cost: 0.22 * numSteps,
     hazard_summary: null,
+    hazards_along_path: [],
+    geofence_violations: [],
     is_safe: true,
     warnings: [],
     algorithm: 'fallback (straight-line)',
@@ -203,15 +249,17 @@ export async function checkReroute(routeId: string, currentPositionIdx?: number)
       params.set('current_position_idx', String(currentPositionIdx))
     }
     const raw = await apiPost<any>(`/api/routing/reroute-check?${params}`, {})
+    const ev = raw.reroute_event
     return {
       route_id: raw.route_id || routeId,
       needs_reroute: raw.needs_reroute ?? false,
-      reroute_event: raw.reroute_event
+      reason: ev?.reason,
+      cost_increase_pct: ev?.cost_increase_pct,
+      new_hazards: ev?.new_route?.warnings || (ev?.trigger ? [ev.trigger] : []),
+      reroute_event: ev
         ? {
-            ...raw.reroute_event,
-            new_route: raw.reroute_event.new_route
-              ? normalizeRoute(raw.reroute_event.new_route)
-              : undefined,
+            ...ev,
+            new_route: ev.new_route ? normalizeRoute(ev.new_route) : undefined,
           }
         : null,
     }
