@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     wdpa_api_token: str = ""
     bhashini_user_id: str = ""
     bhashini_api_key: str = ""
+    bhashini_inference_api_key: str = ""
     bhashini_pipeline_id: str = ""
     llm_provider: str = "anthropic"
     llm_api_key: str = ""
@@ -72,6 +73,7 @@ class Settings(BaseSettings):
     aisstream_ws_url: str = "wss://stream.aisstream.io/v0/stream"
     gfw_api_url: str = "https://gateway.api.globalfishingwatch.org"
     bhashini_api_url: str = "https://meity-auth.ulcacontrib.org"
+    bhashini_dhruva_url: str = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
     gebco_wms_url: str = "https://wms.gebco.net/mapserv"
 
     # ── Data Paths (relative to project root) ───────────────────────────
@@ -113,6 +115,14 @@ class Settings(BaseSettings):
             and self.effective_copernicus_password
             and not self.mock_copernicus
         )
+
+    @property
+    def effective_bhashini_key(self) -> str:
+        return self.bhashini_inference_api_key or self.bhashini_api_key
+
+    @property
+    def has_bhashini_credentials(self) -> bool:
+        return bool(self.effective_bhashini_key)
 
     def should_mock(self, agent_name: str) -> bool:
         """
