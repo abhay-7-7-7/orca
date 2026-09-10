@@ -62,3 +62,4 @@ class ChatResponse(BaseModel):
     data_citations: list[str] = Field(default_factory=list)
     language_detected: Optional[str] = None
     locations: list[LocationRef] = Field(default_factory=list)
+    suggested_followups: list[str] = Field(default_factory=list)

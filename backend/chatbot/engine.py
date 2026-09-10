@@ -108,7 +108,41 @@ IMPORTANT RULES:
 5. If a location is outside the Indian EEZ or in a no-take MPA, warn clearly.
 6. Express distances in km, times in hours, temperatures in °C.
 7. When asked "where to fish," default to a ~200km radius around the user's location or Kochi (9.93°N, 76.27°E) if no location given.
+
+FOLLOW-UP SUGGESTIONS:
+After your response, ALWAYS include exactly 2-3 short follow-up questions the user might want to ask next. Put them inside [FOLLOWUPS] and [/FOLLOWUPS] tags, one per line.
+These should be natural next steps based on what you just told them. Keep each under 40 characters.
+Example:
+[FOLLOWUPS]
+Plan route to best zone
+Check weather at Kochi
+Any storm alerts today?
+[/FOLLOWUPS]
 """
+
+
+import re
+
+def _extract_followups(reply: str) -> tuple[str, list[str]]:
+    """Extract follow-up suggestions from [FOLLOWUPS]...[/FOLLOWUPS] block.
+    
+    Returns (clean_reply, followups_list).
+    """
+    pattern = r'\[FOLLOWUPS\](.*?)\[/FOLLOWUPS\]'
+    match = re.search(pattern, reply, re.DOTALL | re.IGNORECASE)
+    
+    if not match:
+        return reply.strip(), []
+    
+    # Extract the followups
+    raw = match.group(1).strip()
+    followups = [line.strip().lstrip('- ').strip() for line in raw.split('\n') if line.strip()]
+    followups = [f for f in followups if len(f) > 2][:3]  # Max 3
+    
+    # Remove the block from the visible reply
+    clean = re.sub(pattern, '', reply, flags=re.DOTALL | re.IGNORECASE).strip()
+    
+    return clean, followups
 
 
 async def chat(
