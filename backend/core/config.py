@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     mock_vessel_ais: bool = True
     mock_geofence: bool = False
     mock_pfz_synthesis: bool = False
+    mock_copernicus: bool = False
 
     # ── API Keys (required for live mode on key-dependent agents) ──────
     aisstream_api_key: str = ""
@@ -57,6 +58,8 @@ class Settings(BaseSettings):
     llm_provider: str = "anthropic"
     llm_api_key: str = ""
     llm_model: str = "claude-sonnet-4-20250514"
+    copernicusmarine_service_username: str = ""
+    copernicusmarine_service_password: str = ""
     copernicus_username: str = ""
     copernicus_password: str = ""
 
@@ -95,6 +98,22 @@ class Settings(BaseSettings):
         """Resolve a data path relative to the project root."""
         return _PROJECT_ROOT / relative
 
+    @property
+    def effective_copernicus_username(self) -> str:
+        return self.copernicusmarine_service_username or self.copernicus_username
+
+    @property
+    def effective_copernicus_password(self) -> str:
+        return self.copernicusmarine_service_password or self.copernicus_password
+
+    @property
+    def has_copernicus_credentials(self) -> bool:
+        return bool(
+            self.effective_copernicus_username
+            and self.effective_copernicus_password
+            and not self.mock_copernicus
+        )
+
     def should_mock(self, agent_name: str) -> bool:
         """
         Check whether an agent should run in mock mode.
@@ -113,10 +132,12 @@ class Settings(BaseSettings):
             "vessel_ais": ["aisstream_api_key"],
             "geofence": [],  # WDPA token optional — falls back to local data
             "lightning": [],  # No key needed — community MQTT
+            "copernicus": ["effective_copernicus_username", "effective_copernicus_password"],
         }
         required_keys = key_requirements.get(agent_name, [])
         for key_name in required_keys:
-            if not getattr(self, key_name, ""):
+            val = getattr(self, key_name, "")
+            if not val:
                 return True
 
         return False
