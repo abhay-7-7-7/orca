@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 export default function HeroGridLines() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-0">
-      {/* SVG Canvas for precision architectural grid lines and bezier interconnects */}
+      {/* SVG Canvas for precision architectural grid lines, curves, and thematic photo tiles */}
       <svg
         className="w-full h-full"
         viewBox="0 0 1440 900"
@@ -31,66 +31,75 @@ export default function HeroGridLines() {
               d="M 120 0 L 0 0 0 120"
               fill="none"
               stroke="#E8E4DA"
-              strokeWidth="0.8"
+              strokeWidth="0.75"
             />
           </pattern>
 
-          {/* Precise ClipPaths for Embedded Photo Tiles locked to grid cells */}
+          {/* Precise ClipPaths for Embedded Thematic Photo Tiles locked to grid cells on the right */}
           <clipPath id="tile-clip-stacked-top">
-            <rect x="720" y="360" width="120" height="120" rx="2" />
+            <rect x="900" y="280" width="120" height="120" rx="2" />
           </clipPath>
           <clipPath id="tile-clip-stacked-bottom">
-            <rect x="720" y="480" width="120" height="120" rx="2" />
+            <rect x="900" y="400" width="120" height="120" rx="2" />
           </clipPath>
           <clipPath id="tile-clip-east">
-            <rect x="1080" y="240" width="120" height="120" rx="2" />
+            <rect x="1140" y="160" width="120" height="120" rx="2" />
           </clipPath>
         </defs>
 
-        {/* 1. Base modular structural grid matching screenshot */}
-        <rect width="100%" height="100%" fill="url(#base-grid)" opacity="0.6" />
+        {/* 1. Base modular structural grid (softly visible across entire canvas) */}
+        <rect width="100%" height="100%" fill="url(#base-grid)" opacity="0.45" />
 
-        {/* 2. Primary Architectural Curved Flow Paths (exact shapes from reference images) */}
+        {/* 
+          2. Primary Architectural Curved Flow Paths & Grid Boxes
+          Positioned intentionally toward the right (x: 660 - 1440)
+          leaving the left (0 - 660) clean and open for the serif headline
+        */}
         <g stroke="#CDC7B5" strokeWidth="1" fill="none">
-          {/* Top-right sweeping curves */}
-          <path d="M 720 0 L 720 120 Q 720 240 840 240 L 960 240" />
-          <path d="M 600 0 L 600 60 Q 600 120 720 120" />
-          
-          {/* Architectural modular squares */}
-          <rect x="360" y="120" width="120" height="120" />
-          <rect x="600" y="0" width="120" height="120" />
-          <rect x="600" y="240" width="120" height="120" />
-          <rect x="840" y="120" width="120" height="120" />
-          <rect x="480" y="480" width="120" height="120" />
-          <rect x="960" y="360" width="120" height="120" />
-          <rect x="1080" y="480" width="120" height="120" />
+          {/* Subtle horizontal lead-in from behind the hero typography */}
+          <path d="M 480 520 L 780 520" />
+          <path d="M 660 280 L 780 280" />
 
-          {/* EXACT CROSSING CURVED ARCS (from screenshot media_1789028112722.png) */}
-          {/* Arc 1: curves from (600, 480) up and right to (720, 360) */}
-          <path d="M 600 480 C 660 480 660 360 720 360" />
-          {/* Arc 2: curves from (600, 360) down and right to (720, 480) */}
-          <path d="M 600 360 C 660 360 660 480 720 480" />
+          {/* Vertical descending leads */}
+          <path d="M 780 40 L 780 160 Q 780 280 900 280" />
+          <path d="M 900 0 L 900 160 Q 900 280 1020 280 L 1140 280" />
 
-          {/* Sweeping S-curves and fillets */}
-          <path d="M 720 120 Q 840 120 840 240" />
-          <path d="M 840 240 C 900 240 900 360 960 360 L 1080 360" />
-          <path d="M 960 240 Q 1080 240 1080 360 L 1080 480" />
-          <path d="M 1080 360 Q 1200 360 1200 480 L 1200 600" />
+          {/* Architectural modular squares (shifted to right side matching screenshot) */}
+          <rect x="780" y="160" width="120" height="120" />
+          <rect x="780" y="280" width="120" height="120" />
+          <rect x="1020" y="160" width="120" height="120" />
+          <rect x="1020" y="280" width="120" height="120" />
+          <rect x="1020" y="400" width="120" height="120" />
+          <rect x="1260" y="280" width="120" height="120" />
 
-          {/* Flow interconnects across the bottom hero */}
-          <path d="M 0 480 L 360 480 Q 480 480 480 600 L 480 720 Q 480 840 600 840 L 1440 840" />
-          <path d="M 240 240 L 480 240 Q 600 240 600 360 L 600 480" />
-          <path d="M 840 480 Q 960 480 960 600 L 960 720" />
-          <path d="M 720 600 C 720 660 840 660 840 720 L 840 840" />
+          {/* 
+            EXACT CROSSING ARCS (Hourglass / X curve from reference screenshot media_1789028112722.png)
+            Located at cell (x: 780, y: 400)
+          */}
+          <path d="M 780 520 C 840 520 840 400 900 400" />
+          <path d="M 780 400 C 840 400 840 520 900 520" />
+
+          {/* Sweeping S-curves and corner fillets flowing eastward */}
+          <path d="M 900 160 Q 1020 160 1020 280" />
+          <path d="M 1020 280 C 1080 280 1080 400 1140 400 L 1260 400" />
+          <path d="M 1140 280 Q 1260 280 1260 400 L 1260 520" />
+          <path d="M 1260 400 Q 1380 400 1380 520 L 1380 640" />
+
+          {/* Cross-corridor connecting to right edge */}
+          <path d="M 900 520 C 960 520 960 640 1020 640 L 1440 640" />
+          <path d="M 1020 520 Q 1140 520 1140 640 L 1140 760" />
         </g>
 
-        {/* 3. Authentic Photo Tiles Locked Directly inside SVG Grid (matches screenshots) */}
+        {/* 
+          3. Thematic Authentic Photos (Right-Shifted & locked in grid cells)
+          Theme: Indian Marine Fisheries, Deep-Sea Vessels, and Satellite Ocean Telemetry
+        */}
         <g className="photo-tiles">
-          {/* Stacked Tile 1 (Top): Marine deck / harbour scene */}
+          {/* Stacked Tile 1 (Top): Marine Vessel Wake & Ocean Navigation */}
           <image
-            href="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=300&q=80"
-            x="720"
-            y="360"
+            href="https://images.unsplash.com/photo-1559827291-72ee739d0d9a?auto=format&fit=crop&w=400&q=80"
+            x="900"
+            y="280"
             width="120"
             height="120"
             preserveAspectRatio="xMidYMid slice"
@@ -98,8 +107,8 @@ export default function HeroGridLines() {
             opacity="0.92"
           />
           <rect
-            x="720"
-            y="360"
+            x="900"
+            y="280"
             width="120"
             height="120"
             rx="2"
@@ -108,11 +117,11 @@ export default function HeroGridLines() {
             fill="none"
           />
 
-          {/* Stacked Tile 2 (Bottom): Harbour worker / coastal walk (matches screenshot 3) */}
+          {/* Stacked Tile 2 (Bottom): Traditional Fishing Vessel at Dawn on Ocean */}
           <image
-            href="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80"
-            x="720"
-            y="480"
+            href="https://images.unsplash.com/photo-1498084393753-b411b2d26b34?auto=format&fit=crop&w=400&q=80"
+            x="900"
+            y="400"
             width="120"
             height="120"
             preserveAspectRatio="xMidYMid slice"
@@ -120,8 +129,8 @@ export default function HeroGridLines() {
             opacity="0.90"
           />
           <rect
-            x="720"
-            y="480"
+            x="900"
+            y="400"
             width="120"
             height="120"
             rx="2"
@@ -130,20 +139,20 @@ export default function HeroGridLines() {
             fill="none"
           />
 
-          {/* Tile 3 (East): Ocean surface swell & navigation */}
+          {/* Tile 3 (East): Satellite Earth Observation / Ocean Currents Telemetry */}
           <image
-            href="https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=300&q=80"
-            x="1080"
-            y="240"
+            href="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=400&q=80"
+            x="1140"
+            y="160"
             width="120"
             height="120"
             preserveAspectRatio="xMidYMid slice"
             clipPath="url(#tile-clip-east)"
-            opacity="0.92"
+            opacity="0.94"
           />
           <rect
-            x="1080"
-            y="240"
+            x="1140"
+            y="160"
             width="120"
             height="120"
             rx="2"
@@ -153,29 +162,29 @@ export default function HeroGridLines() {
           />
         </g>
 
-        {/* 4. Live Moving Lines — Continuous fluid traveling data pulses along the grid */}
+        {/* 4. Live Moving Lines — Continuous traveling light pulses on the right-shifted tracks */}
         <g fill="none">
-          {/* Pulse 1: Main horizontal cross-ocean current (Terracotta) */}
+          {/* Pulse 1: Terracotta Pulse entering from headline lead-in and sweeping east */}
           <motion.path
-            d="M 0 480 L 360 480 Q 480 480 480 600 L 480 720 Q 480 840 600 840 L 1440 840"
+            d="M 480 520 L 780 520 C 840 520 840 400 900 400 L 1020 400 C 1080 400 1080 280 1140 280 L 1440 280"
             stroke="#C4703F"
             strokeWidth="2"
-            strokeDasharray="140 600"
-            initial={{ strokeDashoffset: 1480 }}
+            strokeDasharray="140 550"
+            initial={{ strokeDashoffset: 1400 }}
             animate={{ strokeDashoffset: 0 }}
             transition={{
-              duration: 7.5,
+              duration: 7,
               repeat: Infinity,
               ease: 'linear',
             }}
           />
 
-          {/* Pulse 2: Vertical descending oceanic data stream (Ocean Cyan) */}
+          {/* Pulse 2: Ocean Cyan Pulse descending from top through the S-curves */}
           <motion.path
-            d="M 720 0 L 720 120 Q 720 240 840 240 L 960 240 Q 1080 240 1080 360 L 1080 480 Q 1200 480 1200 600"
+            d="M 900 0 L 900 160 Q 900 280 1020 280 C 1080 280 1080 400 1140 400 Q 1260 400 1260 520 L 1260 640"
             stroke="#2E7D96"
             strokeWidth="1.8"
-            strokeDasharray="120 500"
+            strokeDasharray="120 480"
             initial={{ strokeDashoffset: 1200 }}
             animate={{ strokeDashoffset: 0 }}
             transition={{
@@ -186,50 +195,50 @@ export default function HeroGridLines() {
             }}
           />
 
-          {/* Pulse 3: Traversing the Crossing S-Curves (Emerald) */}
+          {/* Pulse 3: Emerald Pulse traversing the lower crossing wave */}
           <motion.path
-            d="M 240 240 L 480 240 Q 600 240 600 360 C 660 360 660 480 720 480 L 720 600 C 720 660 840 660 840 720 L 840 840"
+            d="M 780 400 C 840 400 840 520 900 520 C 960 520 960 640 1020 640 L 1440 640"
             stroke="#10B981"
             strokeWidth="1.6"
-            strokeDasharray="110 450"
+            strokeDasharray="110 420"
             initial={{ strokeDashoffset: 1100 }}
             animate={{ strokeDashoffset: 0 }}
             transition={{
               duration: 6,
               repeat: Infinity,
               ease: 'linear',
-              delay: 2.5,
+              delay: 2.8,
             }}
           />
 
-          {/* Pulse 4: Counter Crossing Wave */}
+          {/* Pulse 4: Counter S-Curve Wave (Terracotta secondary stream) */}
           <motion.path
-            d="M 480 480 L 600 480 C 660 480 660 360 720 360 L 720 120 Q 840 120 840 240 C 900 240 900 360 960 360 L 1080 360"
+            d="M 780 40 L 780 160 Q 780 280 900 280 L 1020 280 Q 1140 280 1140 400 L 1260 400"
             stroke="#C4703F"
-            strokeWidth="1.6"
-            strokeDasharray="100 420"
-            initial={{ strokeDashoffset: 1050 }}
+            strokeWidth="1.5"
+            strokeDasharray="95 380"
+            initial={{ strokeDashoffset: 950 }}
             animate={{ strokeDashoffset: 0 }}
             transition={{
-              duration: 6.2,
+              duration: 5.8,
               repeat: Infinity,
               ease: 'linear',
-              delay: 3.8,
+              delay: 3.6,
             }}
           />
         </g>
 
-        {/* 5. Moving glowing nodes traveling along key vertices */}
+        {/* 5. Moving glowing nodes / sensor beads traveling along vertices on the right */}
         <motion.circle
           r="3"
           fill="#C4703F"
           animate={{
-            cx: [360, 480, 480, 600],
-            cy: [480, 480, 720, 840],
-            opacity: [0, 0.9, 0.9, 0],
+            cx: [780, 900, 1020, 1140],
+            cy: [520, 400, 400, 280],
+            opacity: [0, 0.95, 0.95, 0],
           }}
           transition={{
-            duration: 5,
+            duration: 4.8,
             repeat: Infinity,
             ease: 'easeInOut',
           }}
@@ -238,9 +247,9 @@ export default function HeroGridLines() {
           r="3"
           fill="#2E7D96"
           animate={{
-            cx: [720, 840, 960, 1080],
-            cy: [120, 240, 240, 360],
-            opacity: [0, 0.9, 0.9, 0],
+            cx: [900, 1020, 1140, 1260],
+            cy: [160, 280, 400, 520],
+            opacity: [0, 0.95, 0.95, 0],
           }}
           transition={{
             duration: 4.5,

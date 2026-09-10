@@ -65,31 +65,28 @@ export default function HeroLiveWidget() {
         <div className="flex border-b border-cream-200 bg-white/50 text-xs font-medium text-gray-500">
           <button
             onClick={() => setActiveTab('weather')}
-            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 ${
-              activeTab === 'weather'
+            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 ${activeTab === 'weather'
                 ? 'border-terracotta-500 text-charcoal-900 font-bold bg-white'
                 : 'border-transparent hover:text-charcoal-800'
-            }`}
+              }`}
           >
             <span>🌊</span> Sea State
           </button>
           <button
             onClick={() => setActiveTab('pfz')}
-            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 ${
-              activeTab === 'pfz'
+            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 ${activeTab === 'pfz'
                 ? 'border-terracotta-500 text-charcoal-900 font-bold bg-white'
                 : 'border-transparent hover:text-charcoal-800'
-            }`}
+              }`}
           >
             <span>🐟</span> Live PFZ Radar
           </button>
           <button
             onClick={() => setActiveTab('fleet')}
-            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 ${
-              activeTab === 'fleet'
+            className={`flex-1 py-2.5 px-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 ${activeTab === 'fleet'
                 ? 'border-terracotta-500 text-charcoal-900 font-bold bg-white'
                 : 'border-transparent hover:text-charcoal-800'
-            }`}
+              }`}
           >
             <span>🛡️</span> Geofence
           </button>
