@@ -153,12 +153,18 @@ export default function LiveRouteSimulator() {
               </div>
 
               {/* Reasoning Callout */}
-              <div className="bg-amber-50/80 rounded-xl p-3.5 border border-amber-200 text-xs">
-                <div>
-                  <span className="font-bold text-amber-900 block mb-0.5">Autonomous Hazard Reasoning:</span>
-                  <p className="text-amber-800 leading-relaxed">{selectedScenario.hazardAvoided}</p>
-                  <p className="text-[11px] text-emerald-700 font-semibold mt-1">Efficiency: {selectedScenario.fuelSaved}</p>
+              <div className="bg-cream-100/70 rounded-xl p-4 border border-cream-300 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-charcoal-500 uppercase tracking-wider">
+                    Autonomous Hazard Reasoning
+                  </span>
+                  <span className="text-[11px] text-emerald-700 font-semibold font-mono">
+                    Efficiency: {selectedScenario.fuelSaved}
+                  </span>
                 </div>
+                <p className="text-charcoal-700 leading-relaxed font-sans">
+                  {selectedScenario.hazardAvoided}
+                </p>
               </div>
             </div>
 
@@ -167,8 +173,7 @@ export default function LiveRouteSimulator() {
               <div>
                 <div className="flex items-center justify-between text-xs text-cream-400 mb-3">
                   <span className="font-mono uppercase">Status</span>
-                  <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-emerald-400 font-bold text-xs tracking-wider">
                     VERIFIED NAVIGABLE
                   </span>
                 </div>
