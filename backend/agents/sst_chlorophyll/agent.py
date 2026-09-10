@@ -43,20 +43,50 @@ class SSTChlorophyllAgent(AgentBase[SSTChlorophyllData]):
     async def _fetch_live(
         self, bbox: BoundingBox | None = None, **kwargs
     ) -> SSTChlorophyllData:
-        """Fetch real SST + Chlorophyll data from ERDDAP."""
+        """
+        Fetch real SST + Chlorophyll data.
+        Prioritizes Copernicus Marine Service for absolute SST (thetao surface layer);
+        falls back to NOAA OISST via ERDDAP.
+        """
         if bbox is None:
-            # Default: Indian Ocean region
-            bbox = BoundingBox(min_lat=5.0, max_lat=25.0, min_lon=65.0, max_lon=100.0)
+            # Default: Indian coastal waters per CLAUDE.md §4
+            bbox = BoundingBox(min_lat=6.0, max_lat=23.0, min_lon=68.0, max_lon=92.0)
 
         base_url = self._settings.erddap_base_url
+        sst_data: list[SSTDataPoint] = []
+        source_sst = "Copernicus Marine (cmems_mod_glo_phy-thetao_anfc_0.083deg_PT6H-i)"
 
-        # Fetch SST from OISST
-        sst_data = await self._fetch_sst_erddap(base_url, bbox)
+        # 1. Try Copernicus Marine (Primary absolute SST)
+        if self._settings.has_copernicus_credentials:
+            try:
+                sst_data = await self._fetch_sst_copernicus(bbox)
+                logger.info(
+                    "Fetched %d SST points from Copernicus Marine Service", len(sst_data)
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Copernicus Marine SST fetch failed: %s — falling back to ERDDAP", exc
+                )
 
-        # Fetch Chlorophyll from OC-CCI
-        chl_data = await self._fetch_chl_erddap(base_url, bbox)
+        # 2. Fallback to NOAA OISST via ERDDAP
+        if not sst_data:
+            source_sst = "NOAA OISST v2.1 via ERDDAP"
+            try:
+                sst_data = await self._fetch_sst_erddap(base_url, bbox)
+            except Exception as exc:
+                logger.warning("ERDDAP SST fetch failed: %s — using mock", exc)
+                return await self._fetch_mock(bbox)
 
-        # Combine
+        # 3. Fetch Chlorophyll from OC-CCI (with mock fallback if ERDDAP is down)
+        source_chl = "ESA OC-CCI v6 via ERDDAP"
+        try:
+            chl_data = await self._fetch_chl_erddap(base_url, bbox)
+        except Exception as exc:
+            logger.warning("ERDDAP Chlorophyll fetch failed: %s — synthesizing coastal chlorophyll", exc)
+            mock_data = await self._fetch_mock(bbox)
+            chl_data = mock_data.chlorophyll_grid
+            source_chl = "SYNTHESIZED — coastal upwelling proxy"
+
         sst_values = [p.sst_celsius for p in sst_data]
         chl_values = [p.chl_a_mg_m3 for p in chl_data]
 
@@ -67,9 +97,74 @@ class SSTChlorophyllAgent(AgentBase[SSTChlorophyllData]):
             sst_max=max(sst_values) if sst_values else None,
             chl_min=min(chl_values) if chl_values else None,
             chl_max=max(chl_values) if chl_values else None,
-            grid_resolution_deg=0.25,
+            grid_resolution_deg=0.083 if "Copernicus" in source_sst else 0.25,
+            source_sst=source_sst,
+            source_chlorophyll=source_chl,
             date=datetime.utcnow().strftime("%Y-%m-%d"),
         )
+
+    async def _fetch_sst_copernicus(
+        self, bbox: BoundingBox
+    ) -> list[SSTDataPoint]:
+        """
+        Fetch absolute SST from Copernicus Marine Physics Analysis & Forecast.
+
+        Dataset: cmems_mod_glo_phy-thetao_anfc_0.083deg_PT6H-i
+        Variable: thetao (sea water potential temperature, converted to Celsius)
+        Depth: surface level (~0.49m, shallowest depth level)
+
+        SAFETY CRITICAL:
+        DO NOT use cmems_mod_glo_phy_anfc_0.083deg-sst-anomaly_P1D-m for PFZ synthesis!
+        The anomaly dataset contains deviations from climatology, NOT absolute temperature.
+        Using it would produce invalid thermal front detections.
+        """
+        import asyncio
+        import copernicusmarine
+
+        now = datetime.utcnow()
+        start_time = (now - timedelta(days=2)).strftime("%Y-%m-%dT00:00:00")
+        end_time = now.strftime("%Y-%m-%dT%H:%M:%S")
+
+        loop = asyncio.get_running_loop()
+
+        def _query_and_extract():
+            ds = copernicusmarine.open_dataset(
+                dataset_id="cmems_mod_glo_phy-thetao_anfc_0.083deg_PT6H-i",
+                username=self._settings.effective_copernicus_username,
+                password=self._settings.effective_copernicus_password,
+                minimum_longitude=float(bbox.min_lon),
+                maximum_longitude=float(bbox.max_lon),
+                minimum_latitude=float(bbox.min_lat),
+                maximum_latitude=float(bbox.max_lat),
+                start_datetime=start_time,
+                end_datetime=end_time,
+            )
+            # Surface layer (depth=0) and latest available analysis time
+            ds_surface = ds["thetao"].isel(depth=0).isel(time=-1)
+            values = ds_surface.values
+            lats = ds_surface.coords["latitude"].values
+            lons = ds_surface.coords["longitude"].values
+
+            points = []
+            # Downsample stride if high resolution to keep network/memory fast
+            step = 1 if len(lats) <= 30 else max(1, len(lats) // 25)
+            for i in range(0, len(lats), step):
+                lat = float(lats[i])
+                for j in range(0, len(lons), step):
+                    lon = float(lons[j])
+                    val = values[i, j]
+                    if not np.isnan(val):
+                        temp_c = float(val) - 273.15 if val > 100 else float(val)
+                        points.append(
+                            SSTDataPoint(
+                                lat=round(lat, 3),
+                                lon=round(lon, 3),
+                                sst_celsius=round(temp_c, 2),
+                            )
+                        )
+            return points
+
+        return await loop.run_in_executor(None, _query_and_extract)
 
     async def _fetch_sst_erddap(
         self, base_url: str, bbox: BoundingBox

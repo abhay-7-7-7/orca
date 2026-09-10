@@ -56,6 +56,9 @@ class HazardGrid:
         # Component grids for debugging/explanation
         self.wave_cost = np.zeros((self.ny, self.nx))
         self.wind_cost = np.zeros((self.ny, self.nx))
+        self.current_cost = np.zeros((self.ny, self.nx))
+        self.current_speed_grid = np.zeros((self.ny, self.nx))
+        self.current_dir_grid = np.zeros((self.ny, self.nx))
         self.cyclone_cost = np.zeros((self.ny, self.nx))
         self.lightning_cost = np.zeros((self.ny, self.nx))
         self.geofence_cost = np.zeros((self.ny, self.nx))
