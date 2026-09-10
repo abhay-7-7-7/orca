@@ -15,6 +15,42 @@ import {
 } from 'lucide-react'
 import type { ChatMessage } from '../../services/chatbot'
 
+export function cleanMarkdown(text: string): string {
+  if (!text) return ''
+
+  let t = text
+
+  // 1. Normalize spaced asterisks: * * -> ** and quadruple asterisks
+  t = t.replace(/\*\s+\*/g, '**')
+  t = t.replace(/\*{3,}/g, '**')
+
+  // 2. Fix broken dividers / headers like :---.# * 1. or ---.# * 2. or :---.# *
+  t = t.replace(/[:\s]*---+\s*\.?\s*#\s*\*+\s*(\d+)\.?/g, '\n\n---\n\n### $1. ')
+  t = t.replace(/[:\s]*---+\s*\.?\s*#\s*\*+/g, '\n\n---\n\n### ')
+  t = t.replace(/\n?#\s*\*+\s*/g, '\n\n### ')
+  t = t.replace(/###\s*\*+\s*/g, '### ')
+
+  // 3. Fix list items and bullet points concatenated on the same line
+  t = t.replace(/\s*-\s*\*\s*/g, '\n- **')
+  t = t.replace(/(?<=[.!?])\s*(###|\d+\.|\*|\-)\s*/g, '\n\n$1 ')
+
+  // 4. Fix spaced colons and bold tags
+  t = t.replace(/\*\*\s*:\s*\*\*/g, ': **')
+  t = t.replace(/(\*\*)\s*:\s*/g, '$1: ')
+  t = t.replace(/:\s*\*\*\s*/g, ': **')
+
+  // 5. Fix mangled table lines from translation
+  t = t.replace(/\|\s*-+[\s\-]*-\s*\|/g, '\n| --- | --- | --- | --- |\n')
+  t = t.replace(/\|\s*\*\*\s*/g, '| **')
+  t = t.replace(/\s*\*\*\s*\|/g, '** |')
+
+  // 6. Ensure headings have clean line spacing
+  t = t.replace(/([^\n])\s*(###\s+)/g, '$1\n\n$2')
+  t = t.replace(/([^\n])\s*(---\s*)/g, '$1\n\n$2\n\n')
+
+  return t.trim()
+}
+
 interface MessageBubbleProps {
   message: ChatMessage
 }
