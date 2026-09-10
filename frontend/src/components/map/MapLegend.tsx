@@ -15,7 +15,7 @@ export default function MapLegend() {
           className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-semibold text-charcoal-900 bg-cream-50/80 hover:bg-cream-100/80 transition-colors border-b border-cream-200"
         >
           <span className="flex items-center gap-1.5">
-            <span className="text-sm">🧭</span> Marine Map Legend
+            <span className="text-sm">🧭</span> OpenSeaMap Legend
           </span>
           <svg
             width="14"
@@ -39,52 +39,52 @@ export default function MapLegend() {
               exit={{ height: 0, opacity: 0 }}
               className="p-3 space-y-3 text-[11px] font-sans"
             >
+              {/* Wind Streamlines */}
+              {layers.windStream && (
+                <div>
+                  <div className="flex items-center justify-between font-medium text-charcoal-800 mb-1">
+                    <span>💨 Wind Streamlines</span>
+                    <span className="text-[10px] text-cyan-700 font-bold">Flow Vectors</span>
+                  </div>
+                  <div className="h-2 rounded-full w-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 mb-1" />
+                  <div className="flex justify-between text-[9px] text-gray-500">
+                    <span>Cyan (Light air)</span>
+                    <span>Purple (Strong gale)</span>
+                  </div>
+                </div>
+              )}
+
               {/* SST Thermal Scale */}
               {layers.sst && (
                 <div>
                   <div className="flex items-center justify-between font-medium text-charcoal-800 mb-1">
                     <span>🌡️ SST Heatmap</span>
-                    <span className="text-[10px] text-gray-500">26°C – 31°C</span>
+                    <span className="text-[10px] text-gray-500">24°C – 32°C</span>
                   </div>
-                  <div className="h-2.5 rounded-full w-full bg-gradient-to-r from-blue-600 via-emerald-400 via-amber-400 to-red-600" />
-                  <div className="flex justify-between text-[9px] text-gray-500 mt-0.5">
-                    <span>Cool Upwelling</span>
+                  <div className="h-2 rounded-full w-full bg-gradient-to-r from-blue-600 via-emerald-400 via-amber-400 to-red-600 mb-1" />
+                  <div className="flex justify-between text-[9px] text-gray-500">
+                    <span>Cold Upwelling</span>
                     <span>Warm Surface</span>
                   </div>
                 </div>
               )}
 
-              {/* Wind Scale */}
-              {layers.wind && (
-                <div>
-                  <div className="flex items-center justify-between font-medium text-charcoal-800 mb-1">
-                    <span>💨 Wind Vectors</span>
-                    <span className="text-[10px] text-gray-500">km/h</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1 text-[9px] text-center font-bold">
-                    <span className="bg-sky-500/20 text-sky-700 py-0.5 rounded">&lt;15</span>
-                    <span className="bg-emerald-500/20 text-emerald-700 py-0.5 rounded">15-28</span>
-                    <span className="bg-amber-500/20 text-amber-700 py-0.5 rounded">28-40</span>
-                    <span className="bg-red-500/20 text-red-700 py-0.5 rounded">&gt;40</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Hazard & Waves */}
-              {layers.hazards && (
+              {/* Wave Height */}
+              {layers.waves && (
                 <div>
                   <div className="flex items-center justify-between font-medium text-charcoal-800 mb-1">
                     <span>🌊 Wave Swell</span>
+                    <span className="text-[10px] text-gray-500">Meters</span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-charcoal-700">
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block" /> &lt;1.8m Safe
+                      <span className="w-2.5 h-2.5 rounded bg-blue-400 inline-block" /> &lt;1.5m
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded bg-amber-500 inline-block" /> 1.8-2.5m
+                      <span className="w-2.5 h-2.5 rounded bg-amber-500 inline-block" /> 1.5–2.5m
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded bg-red-500 inline-block" /> &gt;2.5m Rough
+                      <span className="w-2.5 h-2.5 rounded bg-red-600 inline-block" /> &gt;2.5m
                     </span>
                   </div>
                 </div>
@@ -103,12 +103,12 @@ export default function MapLegend() {
                   <span>Indian EEZ Limit (200 NM)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-1.5 bg-amber-500/30 border border-amber-600 inline-block" />
-                  <span>Marine Protected Area (MPA)</span>
+                  <span className="w-3 h-0.5 bg-terracotta-500 inline-block" />
+                  <span>ORCA Navigational Route</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-0.5 bg-terracotta-500 inline-block" />
-                  <span>ORCA Hazard-Aware Route</span>
+                  <span className="text-red-500">⚠️</span>
+                  <span>Severe Wave / Hazard Alert</span>
                 </div>
               </div>
             </motion.div>
