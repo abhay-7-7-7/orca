@@ -27,18 +27,24 @@ async def start_scheduler() -> None:
     _running = True
     logger.info("Starting fusion scheduler")
 
-    # Initial fetch for all agents
-    await _initial_fetch()
+    async def _startup_worker() -> None:
+        try:
+            # Initial fetch for all agents in background
+            await _initial_fetch()
+        except Exception as exc:
+            logger.error("Initial fetch failed: %s", exc)
 
-    # Start periodic refresh loops
-    _tasks.append(asyncio.create_task(_refresh_loop("sst_chlorophyll", 86400)))
-    _tasks.append(asyncio.create_task(_refresh_loop("pfz_synthesis", 86400)))
-    _tasks.append(asyncio.create_task(_refresh_loop("marine_weather", 3600)))
-    _tasks.append(asyncio.create_task(_refresh_loop("tide", 21600)))
-    _tasks.append(asyncio.create_task(_refresh_loop("cyclone_disaster", 900)))
-    _tasks.append(asyncio.create_task(_refresh_loop("lightning", 300)))
-    _tasks.append(asyncio.create_task(_refresh_loop("vessel_ais", 300)))
-    # geofence is static — loaded once in initial fetch, no periodic refresh
+        # Start periodic refresh loops
+        _tasks.append(asyncio.create_task(_refresh_loop("sst_chlorophyll", 86400)))
+        _tasks.append(asyncio.create_task(_refresh_loop("pfz_synthesis", 86400)))
+        _tasks.append(asyncio.create_task(_refresh_loop("marine_weather", 3600)))
+        _tasks.append(asyncio.create_task(_refresh_loop("tide", 21600)))
+        _tasks.append(asyncio.create_task(_refresh_loop("cyclone_disaster", 900)))
+        _tasks.append(asyncio.create_task(_refresh_loop("lightning", 300)))
+        _tasks.append(asyncio.create_task(_refresh_loop("vessel_ais", 300)))
+        # geofence is static — loaded once in initial fetch, no periodic refresh
+
+    _tasks.append(asyncio.create_task(_startup_worker()))
 
 
 async def stop_scheduler() -> None:
