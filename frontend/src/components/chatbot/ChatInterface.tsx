@@ -1,6 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import {
+  Compass,
+  Send,
+  Mic,
+  Square,
+  Activity,
+  Waves,
+  Fish,
+  ShieldCheck,
+  Navigation,
+  Sparkles,
+  RotateCcw,
+} from 'lucide-react'
 import { useChatStore } from '../../store/chatStore'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
@@ -26,6 +39,7 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
   const isRecording = useChatStore((s) => s.isRecording)
   const detectedLanguage = useChatStore((s) => s.detectedLanguage)
   const contextChips = useChatStore((s) => s.contextChips)
+  const clearMessages = useChatStore((s) => s.clearMessages)
 
   const { send } = useChatStream()
   const { startRecording, stopRecording, getAnalyserData } = useVoiceInput()
@@ -54,7 +68,6 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
       const text = await stopRecording()
       if (text) {
         setInput(text)
-        // Auto-send after voice input
         await send(text)
       }
     } else {
@@ -64,74 +77,137 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
 
   const isFullpage = mode === 'fullpage'
 
+  const samplePrompts = [
+    {
+      icon: Fish,
+      text: 'i need maximum profit tommarow, i am now at vizhinjam',
+      label: 'Vizhinjam Fishing Plan',
+    },
+    {
+      icon: Waves,
+      text: 'What is the current wave height and wind speed at Kochi?',
+      label: 'Kochi Live Sea Conditions',
+    },
+    {
+      icon: ShieldCheck,
+      text: 'Am I allowed to fish near Digboi, Assam?',
+      label: 'Digboi EEZ & River Check',
+    },
+    {
+      icon: Navigation,
+      text: 'Plan a safe route from Kochi to high PFZ zone avoiding MPAs',
+      label: 'Safe Route Planning',
+    },
+  ]
+
   return (
-    <div className={`flex flex-col ${isFullpage ? 'h-full' : 'h-[600px]'}`}>
+    <div className={`flex flex-col ${isFullpage ? 'h-full' : 'h-[600px]'} bg-cream-50/40`}>
       {/* Header */}
-      <div className="px-5 py-4 border-b border-cream-200 flex items-center justify-between flex-shrink-0">
+      <div className="px-5 py-3.5 border-b border-cream-200 bg-white flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-charcoal-900 flex items-center justify-center">
-            <span className="text-cream-100 text-xs font-bold">O</span>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-charcoal-900 to-ocean-950 flex items-center justify-center shadow-xs border border-charcoal-800">
+            <Compass size={16} className="text-cream-200" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold font-sans text-charcoal-900">
-              ORCA Assistant
-            </h3>
-            <p className="text-[10px] text-cream-400">
-              Marine intelligence • Voice + Text
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold font-sans text-charcoal-900">
+                ORCA Assistant
+              </h3>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.2 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Ocean Fusion
+              </span>
+            </div>
+            <p className="text-[11px] text-cream-400">
+              Copernicus • Open-Meteo • INCOIS PFZ • Bhashini 22 Languages
             </p>
           </div>
         </div>
-        {detectedLanguage && <LanguageBadge />}
+
+        <div className="flex items-center gap-2">
+          {detectedLanguage && <LanguageBadge />}
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={clearMessages}
+              className="p-1.5 rounded-lg text-cream-400 hover:text-charcoal-800 hover:bg-cream-100 transition-colors cursor-pointer"
+              title="Reset conversation"
+            >
+              <RotateCcw size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-5 min-h-0">
         {messages.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12"
+            className="text-center py-10 max-w-lg mx-auto"
           >
-            <div className="w-16 h-16 rounded-full bg-cream-200 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">🌊</span>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-ocean-50 to-terracotta-50 border border-cream-300 flex items-center justify-center mx-auto mb-3.5 shadow-2xs">
+              <Compass size={26} className="text-ocean-800" />
             </div>
-            <h4 className="text-base font-semibold text-charcoal-900 mb-2 font-serif">
-              Ask ORCA anything
+            <h4 className="text-lg font-bold text-charcoal-900 mb-1 font-serif">
+              ORCA Marine Intelligence
             </h4>
-            <p className="text-sm text-cream-400 max-w-xs mx-auto leading-relaxed">
-              Where to fish today, current wave conditions, route safety — ask in any language.
+            <p className="text-xs text-charcoal-500 leading-relaxed mb-6">
+              Ask about wave heights, high-yield PFZ fishing zones, or boundary safety in any Indian language. All recommendations cite live satellite and weather models.
             </p>
-            <div className="flex flex-wrap justify-center gap-2 mt-6">
-              {[
-                'Where should I fish today near Kochi?',
-                'Is it safe to go out now?',
-                'Show me PFZ zones for Kerala',
-              ].map((q, i) => (
-                <button
-                  key={i}
-                  onClick={() => send(q)}
-                  className="text-xs px-3 py-2 rounded-full bg-cream-200 text-charcoal-800 hover:bg-cream-300 transition-colors"
-                >
-                  {q}
-                </button>
-              ))}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
+              {samplePrompts.map((item, i) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={i}
+                    onClick={() => send(item.text)}
+                    className="p-3 rounded-xl bg-white border border-cream-300 hover:border-terracotta-400 hover:shadow-xs transition-all text-left group flex items-start gap-2.5 cursor-pointer"
+                  >
+                    <div className="p-1.5 rounded-lg bg-cream-100 text-charcoal-700 group-hover:bg-terracotta-50 group-hover:text-terracotta-700 transition-colors flex-shrink-0 mt-0.5">
+                      <Icon size={14} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-charcoal-900 group-hover:text-terracotta-800 transition-colors">
+                        {item.label}
+                      </div>
+                      <div className="text-[11px] text-cream-400 truncate mt-0.5 font-sans">
+                        "{item.text}"
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </motion.div>
         )}
 
-        {messages.map((msg, i) => (
-          <div key={i}>
-            <MessageBubble message={msg} />
-            {/* Tool call bubbles */}
-            {msg.tool_calls && msg.tool_calls.length > 0 && (
-              <div className="mt-2 space-y-1.5 ml-2">
-                {msg.tool_calls.map((tc, j) => (
-                  <ToolCallBubble key={j} toolCall={tc} />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+        {messages.map((msg, i) => {
+          const isAssistant = msg.role === 'assistant'
+          return (
+            <div key={i} className="space-y-2.5">
+              {/* Tool call telemetry rendered before assistant answer */}
+              {isAssistant && msg.tool_calls && msg.tool_calls.length > 0 && (
+                <div className="ml-11 max-w-[95%] sm:max-w-[85%] space-y-1.5 my-1.5">
+                  <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-charcoal-400 px-1">
+                    <Activity size={12} className="text-ocean-600" />
+                    Live Telemetry Ingestion ({msg.tool_calls.length}{' '}
+                    {msg.tool_calls.length === 1 ? 'source' : 'sources'})
+                  </div>
+                  <div className="space-y-1">
+                    {msg.tool_calls.map((tc, j) => (
+                      <ToolCallBubble key={j} toolCall={tc} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <MessageBubble message={msg} />
+            </div>
+          )
+        })}
 
         {isLoading && <TypingIndicator />}
 
@@ -140,65 +216,59 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
 
       {/* Context chips */}
       {contextChips.length > 0 && (
-        <div className="px-5 py-2 border-t border-cream-200 flex-shrink-0">
+        <div className="px-5 py-2 border-t border-cream-200 bg-white flex-shrink-0">
           <ContextChips />
         </div>
       )}
 
       {/* Voice indicator */}
       {isRecording && (
-        <div className="px-5 py-3 border-t border-cream-200 flex-shrink-0 bg-cream-50">
+        <div className="px-5 py-3 border-t border-cream-200 flex-shrink-0 bg-red-50/50">
           <VoiceIndicator getAnalyserData={getAnalyserData} />
         </div>
       )}
 
-      {/* Input */}
-      <div className="px-5 py-4 border-t border-cream-200 flex-shrink-0">
-        <div className="flex items-center gap-2">
+      {/* Input bar */}
+      <div className="px-4 sm:px-6 py-3.5 border-t border-cream-200 bg-white flex-shrink-0 shadow-2xs">
+        <div className="flex items-center gap-2 max-w-4xl mx-auto">
           {/* Mic button */}
           <button
+            type="button"
             onClick={handleVoice}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 cursor-pointer shadow-2xs ${
               isRecording
-                ? 'bg-red-500 text-white animate-pulse-soft'
-                : 'bg-cream-200 text-charcoal-800 hover:bg-cream-300'
+                ? 'bg-red-500 text-white animate-pulse'
+                : 'bg-cream-100 text-charcoal-700 hover:bg-cream-200 border border-cream-300'
             }`}
             aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+            title={isRecording ? 'Stop recording' : 'Speak in your language'}
           >
-            {isRecording ? (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <rect x="4" y="4" width="8" height="8" rx="1" />
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <rect x="6" y="2" width="4" height="8" rx="2" />
-                <path d="M4 7v1a4 4 0 0 0 8 0V7" />
-                <path d="M8 12v2" />
-              </svg>
-            )}
+            {isRecording ? <Square size={15} fill="currentColor" /> : <Mic size={17} />}
           </button>
 
           {/* Text input */}
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isRecording ? t('chat.recording') : t('chat.placeholder')}
-            disabled={isRecording}
-            className="flex-1 px-4 py-2.5 text-sm bg-cream-50 border border-cream-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-terracotta-500/30 focus:border-terracotta-500 disabled:opacity-50 transition-all font-sans"
-          />
+          <div className="flex-1 relative">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={isRecording ? 'Listening to your voice...' : 'Ask ORCA in English, Malayalam, Tamil, Hindi, Bengali...'}
+              disabled={isRecording}
+              className="w-full px-4 py-2.5 text-sm bg-cream-50/80 border border-cream-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-terracotta-500/20 focus:border-terracotta-500 disabled:opacity-50 transition-all font-sans text-charcoal-900 placeholder:text-cream-400 shadow-2xs"
+            />
+          </div>
 
           {/* Send button */}
           <button
+            type="button"
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="w-10 h-10 rounded-full bg-charcoal-900 text-cream-100 flex items-center justify-center disabled:opacity-30 hover:bg-charcoal-800 transition-all flex-shrink-0"
+            className="w-10 h-10 rounded-xl bg-charcoal-900 text-cream-100 flex items-center justify-center disabled:opacity-30 hover:bg-charcoal-800 transition-all flex-shrink-0 cursor-pointer shadow-xs border border-charcoal-800"
             aria-label="Send message"
+            title="Send query"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2L2 8l5 2 2 5z" />
-            </svg>
+            <Send size={15} />
           </button>
         </div>
       </div>
