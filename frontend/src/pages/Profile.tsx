@@ -318,13 +318,8 @@ export default function Profile() {
                 </p>
               </div>
             </div>
-            <Link
-              to="/admin/sos"
-              className="py-1.5 px-3 rounded-lg bg-cream-100/10 hover:bg-cream-100/20 text-cream-100 text-xs font-semibold border border-white/10 transition-colors no-underline hidden sm:block"
-            >
-              Open Live Monitor
-            </Link>
           </div>
+
 
           <p className="text-xs text-cream-300 leading-relaxed">
             Whenever you activate the emergency SOS button on the vessel terminal or live map, the
@@ -362,14 +357,22 @@ export default function Profile() {
                       {incident.location.lat.toFixed(4)}°N, {incident.location.lon.toFixed(4)}°E
                     </p>
                   </div>
-                  <Link
-                    to="/admin/sos"
-                    className="text-xs font-semibold text-terracotta-600 hover:underline"
-                  >
-                    View Status
-                  </Link>
+
+                  {profile.role === 'admin' ? (
+                    <Link
+                      to="/admin/sos"
+                      className="text-xs font-semibold text-terracotta-600 hover:underline"
+                    >
+                      View Dispatch Console
+                    </Link>
+                  ) : (
+                    <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      Logged with Coast Guard
+                    </span>
+                  )}
                 </div>
               ))}
+
             </div>
           </div>
         )}
