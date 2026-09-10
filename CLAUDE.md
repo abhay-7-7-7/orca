@@ -18,7 +18,7 @@ This file is the single source of truth for the project's problem framing, archi
 - A **live dashboard** tracks the vessel (or a simulated position) along that route: current wave/wind conditions on the path ahead, precaution banners, and automatic **rerouting** the moment conditions along the current path degrade.
 - A **chatbot** sits over the same live data and map state — it doesn't have its own private knowledge, it queries the same agents and can explain *why* a zone or route was chosen ("high chlorophyll front here, wave height under 1.2m along this path, no MPA/IMBL conflict").
 
-**V2 (explicitly parked, not this version):** predictive models — forecasting fish density, wave state, or cyclone tracks ahead of official advisories, instead of only reacting to live data. Don't build this now; design the data layer so it slots in later (i.e., keep agents as clean data producers so a future prediction agent can just subscribe to their output).
+**V2 (explicitly parked, not this version):** predictive models — forecasting fish density, wave state, or cyclone tracks ahead of official advisories, instead of only reacting to live data. Don't build this now; design the data layer so it slots in later (i.e., keep agents as clean data producers so a future prediction agent can just subscribe to their output)..   
 
 **Non-negotiable requirement from the PS that's easy to forget while building:** natural-language, multi-turn, **Indian-regional-language** interaction. This isn't a nice-to-have UI skin — it's a scored requirement. Build the language layer in from day one (§5.5), not bolted on at the end.
 
