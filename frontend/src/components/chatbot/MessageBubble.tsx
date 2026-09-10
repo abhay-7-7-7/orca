@@ -242,7 +242,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 ),
               }}
             >
-              {message.content}
+              {cleanMarkdown(message.content)}
             </ReactMarkdown>
           </div>
         )}
