@@ -61,8 +61,19 @@ const LOCAL_USER_KEY = 'orca_auth_user_v1'
 const LOCAL_PROFILE_KEY = 'orca_auth_profile_v1'
 const USERS_TABLE_KEY = 'orca_db_users_table_v1'
 
-// Default seed account available for testing
+// Default seed accounts: admin and sample skipper
 const DEFAULT_SEED_USERS: StoredUserAccount[] = [
+  {
+    id: 'admin_root_001',
+    email: 'admin@123',
+    passwordHash: 'hello123',
+    name: 'SAR Mission Controller',
+    phone: '+91 484 2216500',
+    vessel_name: 'Coast Guard Command Vessel',
+    home_port: 'Kochi Naval Enclave',
+    role: 'admin',
+    created_at: new Date('2026-01-01T00:00:00Z').toISOString(),
+  },
   {
     id: 'user_master_001',
     email: 'skipper@orca.maritime',
@@ -77,26 +88,40 @@ const DEFAULT_SEED_USERS: StoredUserAccount[] = [
 ]
 
 /**
- * Get all registered accounts from the database table
+ * Get all registered accounts from the database table.
+ * Guarantees that admin@123 is always present.
  */
 export function getRegisteredUsersTable(): StoredUserAccount[] {
+  let list: StoredUserAccount[] = []
   try {
     const raw = localStorage.getItem(USERS_TABLE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed
+        list = parsed
       }
     }
   } catch (err) {
     console.warn('Could not load users table from storage:', err)
   }
-  // Initialize with default seed user if empty
-  try {
-    localStorage.setItem(USERS_TABLE_KEY, JSON.stringify(DEFAULT_SEED_USERS))
-  } catch {}
-  return DEFAULT_SEED_USERS
+
+  // Ensure admin account always exists with password hello123
+  const adminIndex = list.findIndex((u) => u.email.toLowerCase() === 'admin@123')
+  if (adminIndex === -1) {
+    list.unshift(DEFAULT_SEED_USERS[0])
+    saveRegisteredUsersTable(list)
+  } else {
+    // Update password if needed
+    if (list[adminIndex].passwordHash !== 'hello123' || list[adminIndex].role !== 'admin') {
+      list[adminIndex].passwordHash = 'hello123'
+      list[adminIndex].role = 'admin'
+      saveRegisteredUsersTable(list)
+    }
+  }
+
+  return list.length > 0 ? list : DEFAULT_SEED_USERS
 }
+
 
 /**
  * Save updated registered accounts list to the database table
@@ -287,13 +312,49 @@ export async function signInUser(params: {
   const { email, password } = params
   const normalizedEmail = email.trim().toLowerCase()
 
-  // 1. If Supabase is connected to a live project
+  // 1. Direct Administrator Verification: username = admin@123, pass = hello123
+  if (normalizedEmail === 'admin@123') {
+    if (password !== 'hello123') {
+      return {
+        user: null,
+        profile: null,
+        error: 'Incorrect password for admin account. Access denied.',
+      }
+    }
+    const adminProfile: UserProfile = {
+      id: 'admin_root_001',
+      email: 'admin@123',
+      name: 'SAR Mission Controller',
+      phone: '+91 484 2216500',
+      vessel_name: 'Coast Guard Command Vessel',
+      home_port: 'Kochi Naval Enclave',
+      role: 'admin',
+      created_at: new Date('2026-01-01T00:00:00Z').toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    setLocalProfile(adminProfile)
+    return {
+      user: {
+        id: adminProfile.id,
+        email: adminProfile.email,
+        app_metadata: { role: 'admin' },
+        user_metadata: { name: adminProfile.name, role: 'admin' },
+        aud: 'authenticated',
+        created_at: adminProfile.created_at,
+      } as unknown as User,
+      profile: adminProfile,
+      error: null,
+    }
+  }
+
+  // 2. If Supabase is connected to a live project
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
       })
+
 
       if (error) {
         // Supabase returns 'Invalid login credentials' for both wrong user and wrong password

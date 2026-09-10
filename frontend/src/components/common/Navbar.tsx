@@ -86,28 +86,31 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {/* Admin Distress Monitor Link */}
-          <Link
-            to="/admin"
-            className={`text-sm font-medium no-underline flex items-center gap-2 transition-colors ${
-              location.pathname.startsWith('/admin')
-                ? isDarkNav
-                  ? 'text-cream-100 font-semibold'
-                  : 'text-charcoal-900 font-semibold'
-                : isDarkNav
-                ? 'text-cream-400 hover:text-cream-100'
-                : 'text-cream-400 hover:text-charcoal-900'
-            }`}
-          >
-            <span>Distress Monitor</span>
-            {activeSOSCount > 0 && (
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-              </span>
-            )}
-          </Link>
+          {/* Admin Distress Monitor Link - Strictly visible only for Admin */}
+          {isAuthenticated && profile?.role === 'admin' && (
+            <Link
+              to="/admin/sos"
+              className={`text-sm font-medium no-underline flex items-center gap-2 transition-colors ${
+                location.pathname.startsWith('/admin')
+                  ? isDarkNav
+                    ? 'text-cream-100 font-semibold'
+                    : 'text-charcoal-900 font-semibold'
+                  : isDarkNav
+                  ? 'text-cream-400 hover:text-cream-100'
+                  : 'text-cream-400 hover:text-charcoal-900'
+              }`}
+            >
+              <span>Distress Monitor</span>
+              {activeSOSCount > 0 && (
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                </span>
+              )}
+            </Link>
+          )}
         </div>
+
 
         {/* Right Actions: Auth & Map CTA */}
         <div className="flex items-center gap-3">

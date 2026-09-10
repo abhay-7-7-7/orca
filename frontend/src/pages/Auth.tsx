@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -8,17 +8,10 @@ import {
   Lock,
   User as UserIcon,
   Anchor,
-  Compass,
   ArrowRight,
-  ShieldCheck,
   AlertCircle,
-  CheckCircle2,
-  Database,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
-import { isSupabaseConfigured, getSupabaseUrl } from '../services/supabase'
 
 export default function Auth() {
   const navigate = useNavigate()
@@ -35,29 +28,9 @@ export default function Auth() {
   const [vesselName, setVesselName] = useState('')
   const [homePort, setHomePort] = useState('Kochi (Cochin) Port')
 
-  // Supabase URL configuration
-  const [supabaseConnected, setSupabaseConnected] = useState(isSupabaseConfigured())
-  const [showConfig, setShowConfig] = useState(false)
-  const [inputUrl, setInputUrl] = useState(getSupabaseUrl())
-  const [urlSaveSuccess, setUrlSaveSuccess] = useState(false)
-
   const { login, register, isLoading, error, clearError } = useAuthStore()
   const [formFeedback, setFormFeedback] = useState<string | null>(null)
 
-  const handleSaveSupabaseUrl = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (inputUrl && inputUrl.trim().includes('.supabase.co')) {
-      localStorage.setItem('orca_supabase_url', inputUrl.trim())
-      setSupabaseConnected(true)
-      setUrlSaveSuccess(true)
-      setTimeout(() => {
-        setUrlSaveSuccess(false)
-        window.location.reload()
-      }, 1200)
-    } else {
-      setFormFeedback('Please enter a valid Supabase URL in the format https://<project-ref>.supabase.co')
-    }
-  }
 
   const handleModeSwitch = (newMode: 'signin' | 'register') => {
     setMode(newMode)
@@ -72,12 +45,18 @@ export default function Auth() {
 
     if (mode === 'signin') {
       if (!email.trim() || !password) {
-        setFormFeedback('Please enter both your registered email and password.')
+        setFormFeedback('Please enter your username or registered email and password.')
         return
       }
       const success = await login(email.trim(), password)
       if (success) {
-        navigate(from, { replace: true })
+        const currentProfile = useAuthStore.getState().profile
+        if (currentProfile?.role === 'admin' || email.trim().toLowerCase() === 'admin@123') {
+          navigate('/admin/sos', { replace: true })
+        } else {
+          const redirectPath = from && from !== '/' && !from.startsWith('/admin') ? from : '/profile'
+          navigate(redirectPath, { replace: true })
+        }
       }
     } else {
       if (!name.trim()) {
@@ -106,10 +85,11 @@ export default function Auth() {
         home_port: homePort,
       })
       if (success) {
-        navigate(from, { replace: true })
+        navigate('/profile', { replace: true })
       }
     }
   }
+
 
   return (
     <div className="min-h-screen bg-cream-100 flex flex-col justify-center py-16 px-4 sm:px-6 lg:px-8 font-sans">
@@ -259,19 +239,19 @@ export default function Auth() {
               </>
             )}
 
-            {/* Email */}
+            {/* Email or Username */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-700 mb-1">
-                Email Address *
+                {mode === 'signin' ? 'Email Address or Username *' : 'Email Address *'}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-cream-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@maritime.in"
+                  placeholder={mode === 'signin' ? 'admin@123 or user@domain.com' : 'name@maritime.in'}
                   className="w-full pl-9 pr-3 py-2.5 text-xs rounded-lg bg-cream-50/50 border border-cream-300 text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:border-terracotta-500 transition-colors"
                 />
               </div>
@@ -302,7 +282,7 @@ export default function Auth() {
               </div>
               {mode === 'signin' && (
                 <p className="text-[10px] text-charcoal-500 mt-1.5 leading-normal">
-                  Logins are strictly checked against the database table. Unregistered emails or invalid passwords are not permitted entry.
+                  Logins are strictly checked against the database table. Unregistered accounts or invalid passwords are not permitted entry.
                 </p>
               )}
             </div>
@@ -323,69 +303,9 @@ export default function Auth() {
               )}
             </button>
           </form>
-
-          {/* Database & Cloud Connection Status */}
-          <div className="pt-4 border-t border-cream-200 space-y-3">
-            <button
-              type="button"
-              onClick={() => setShowConfig(!showConfig)}
-              className="w-full flex items-center justify-between text-[11px] text-charcoal-600 hover:text-charcoal-900 transition-colors py-1"
-            >
-              <div className="flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-terracotta-500" />
-                <span className="font-semibold">
-                  Database: {supabaseConnected ? 'Supabase Cloud' : 'Maritime Table (Local)'}
-                </span>
-              </div>
-              {showConfig ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
-
-            {showConfig && (
-              <div className="p-3 bg-cream-50 border border-cream-300 rounded-xl space-y-2 text-xs">
-                <p className="text-[11px] text-charcoal-600 leading-relaxed">
-                  Enter your Supabase Project URL to synchronize directly with your Supabase Cloud instance:
-                </p>
-                <form onSubmit={handleSaveSupabaseUrl} className="space-y-2">
-                  <input
-                    type="text"
-                    value={inputUrl}
-                    onChange={(e) => setInputUrl(e.target.value)}
-                    placeholder="https://<project-ref>.supabase.co"
-                    className="w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-cream-300 bg-white text-charcoal-900 focus:outline-none focus:border-terracotta-500"
-                  />
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-charcoal-400">
-                      Key: {import.meta.env.VITE_SUPABASE_ANON_KEY?.slice(0, 15)}...
-                    </span>
-                    <button
-                      type="submit"
-                      className="px-3 py-1 rounded bg-charcoal-900 text-cream-50 text-[11px] font-semibold hover:bg-charcoal-800"
-                    >
-                      {urlSaveSuccess ? 'Saved! Reloading...' : 'Connect URL'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            <div className="text-center pt-1">
-              <div className="inline-flex items-center gap-1.5 text-[11px] text-charcoal-500 font-sans">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>INCOIS & Coast Guard MRCC Interoperable Protocol</span>
-              </div>
-            </div>
-          </div>
         </div>
-
-
-        {/* Footnote */}
-        <p className="mt-6 text-center text-xs text-charcoal-500">
-          Need rescue dispatch assistance?{' '}
-          <Link to="/admin/sos" className="font-semibold text-terracotta-600 hover:underline">
-            View Live Distress Queue
-          </Link>
-        </p>
       </div>
     </div>
   )
 }
+
