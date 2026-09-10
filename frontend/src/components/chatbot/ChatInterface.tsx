@@ -5,15 +5,12 @@ import {
   Mic,
   Square,
   Compass,
-  Fish,
-  Navigation,
   RotateCcw,
 } from 'lucide-react'
 import { useChatStore } from '../../store/chatStore'
 import { useChatStream } from '../../hooks/useChatStream'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import MessageBubble from './MessageBubble'
-import ToolCallBubble from './ToolCallBubble'
 import LanguageBadge from './LanguageBadge'
 import VoiceIndicator from './VoiceIndicator'
 import TypingIndicator from './TypingIndicator'
@@ -41,11 +38,11 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return
-    const text = input
-    setInput('')
-    await send(text)
+  const handleSend = async (text?: string) => {
+    const msg = text || input
+    if (!msg.trim() || isLoading) return
+    if (!text) setInput('')
+    await send(msg)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -68,16 +65,9 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
   }
 
   const samplePrompts = [
-    {
-      icon: Fish,
-      text: 'Best fishing zones near Vizhinjam tomorrow',
-      label: 'Find fishing zones',
-    },
-    {
-      icon: Navigation,
-      text: 'Plan a safe route from Kochi avoiding bad weather',
-      label: 'Plan safe route',
-    },
+    { text: 'Best fishing zones near Vizhinjam tomorrow', label: '🐟 Find fishing zones' },
+    { text: 'Plan a safe route from Kochi', label: '🛤️ Plan safe route' },
+    { text: 'Is it safe to go out today?', label: '🌊 Check sea conditions' },
   ]
 
   return (
@@ -115,7 +105,7 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
         {messages.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -133,49 +123,53 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
             </p>
 
             <div className="flex flex-col gap-2 text-left">
-              {samplePrompts.map((item, i) => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={i}
-                    onClick={() => send(item.text)}
-                    className="p-3 rounded-xl bg-white border border-cream-300 hover:border-terracotta-400 hover:shadow-xs transition-all text-left group flex items-center gap-2.5 cursor-pointer"
-                  >
-                    <div className="p-1.5 rounded-lg bg-cream-100 text-charcoal-700 group-hover:bg-terracotta-50 group-hover:text-terracotta-700 transition-colors flex-shrink-0">
-                      <Icon size={14} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-semibold text-charcoal-900 group-hover:text-terracotta-800 transition-colors">
-                        {item.label}
-                      </div>
-                      <div className="text-[11px] text-cream-400 truncate font-sans">
-                        "{item.text}"
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
+              {samplePrompts.map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSend(item.text)}
+                  className="p-3 rounded-xl bg-white border border-cream-300 hover:border-terracotta-400 hover:shadow-xs transition-all text-left group cursor-pointer"
+                >
+                  <div className="text-xs font-semibold text-charcoal-900 group-hover:text-terracotta-800 transition-colors">
+                    {item.label}
+                  </div>
+                  <div className="text-[11px] text-cream-400 truncate font-sans mt-0.5">
+                    "{item.text}"
+                  </div>
+                </button>
+              ))}
             </div>
           </motion.div>
         )}
 
-        {messages.map((msg, i) => {
-          const isAssistant = msg.role === 'assistant'
-          return (
-            <div key={i} className="space-y-2">
-              {/* Tool call pills before assistant answer */}
-              {isAssistant && msg.tool_calls && msg.tool_calls.length > 0 && (
-                <div className="ml-10 flex flex-wrap gap-1.5 my-1">
-                  {msg.tool_calls.map((tc, j) => (
-                    <ToolCallBubble key={j} toolCall={tc} />
-                  ))}
-                </div>
-              )}
+        {messages.map((msg, i) => (
+          <div key={i} className="space-y-2">
+            <MessageBubble message={msg} />
 
-              <MessageBubble message={msg} />
-            </div>
-          )
-        })}
+            {/* Follow-up suggestion chips */}
+            {msg.role === 'assistant' &&
+              msg.suggested_followups &&
+              msg.suggested_followups.length > 0 &&
+              i === messages.length - 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.2 }}
+                  className="ml-10 flex flex-wrap gap-1.5"
+                >
+                  {msg.suggested_followups.map((followup, j) => (
+                    <button
+                      key={j}
+                      onClick={() => handleSend(followup)}
+                      disabled={isLoading}
+                      className="text-[11px] px-3 py-1.5 rounded-full border border-cream-300 bg-white text-charcoal-700 hover:border-terracotta-500 hover:text-terracotta-700 hover:bg-terracotta-50/50 transition-all cursor-pointer disabled:opacity-40 shadow-2xs"
+                    >
+                      {followup}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+          </div>
+        ))}
 
         {isLoading && <TypingIndicator />}
 
@@ -223,7 +217,7 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
           {/* Send button */}
           <button
             type="button"
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim() || isLoading}
             className="w-9 h-9 rounded-xl bg-charcoal-900 text-cream-100 flex items-center justify-center disabled:opacity-30 hover:bg-charcoal-800 transition-all flex-shrink-0 cursor-pointer shadow-xs border border-charcoal-800"
             aria-label="Send message"
