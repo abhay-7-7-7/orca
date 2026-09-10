@@ -23,7 +23,6 @@ import ContextChips from './ContextChips'
 import LanguageBadge from './LanguageBadge'
 import VoiceIndicator from './VoiceIndicator'
 import TypingIndicator from './TypingIndicator'
-import { Waves } from 'lucide-react'
 
 interface ChatInterfaceProps {
   mode: 'overlay' | 'fullpage'
