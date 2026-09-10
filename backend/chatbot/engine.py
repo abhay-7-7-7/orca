@@ -1,0 +1,307 @@
+"""
+Chatbot Engine — tool-calling LLM orchestrator.
+
+Sits on top of the fusion layer and routing engine.
+Uses Anthropic Claude (default) or other LLM providers.
+
+Falls back to a rule-based responder when no LLM key is configured.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime
+from typing import Optional
+
+from backend.chatbot.tools import TOOLS, execute_tool
+from backend.core.config import get_settings
+from backend.core.logging import get_logger
+from backend.models.chatbot import ChatMessage, ChatResponse, ToolCallInfo
+
+logger = get_logger(__name__)
+
+# ── In-memory session store (hackathon) ─────────────────────────────
+# Production: replace with Redis or database
+_sessions: dict[str, list[ChatMessage]] = {}
+
+
+SYSTEM_PROMPT = """You are ORCA, an AI assistant for Indian marine stakeholders — primarily fishermen.
+You help users find safe, productive fishing locations and plan safe routes.
+
+You have access to LIVE marine data tools:
+- Weather conditions (waves, wind)
+- Potential Fishing Zones (PFZ) based on SST gradients and chlorophyll
+- Safe routing with hazard avoidance (cyclones, lightning, MPAs, EEZ boundaries)
+- Geofence checking (EEZ/IMBL boundaries, marine protected areas)
+- Cyclone and disaster alerts
+- Tide predictions
+
+IMPORTANT RULES:
+1. Always use your tools to get current data — never make up conditions.
+2. When suggesting fishing locations, cite the actual PFZ score and conditions.
+3. When suggesting routes, mention the hazards avoided and distance/time.
+4. Be concise but thorough about safety warnings.
+5. If a location is outside the Indian EEZ or in a no-take MPA, warn clearly.
+6. Express distances in km, times in hours, temperatures in °C.
+7. When asked "where to fish," default to a ~200km radius around the user's location or Kochi (9.93°N, 76.27°E) if no location given.
+"""
+
+
+async def chat(
+    message: str,
+    session_id: str = "default",
+    location: dict | None = None,
+) -> ChatResponse:
+    """
+    Process a chat message through the LLM with tool calling.
+
+    Falls back to a rule-based responder if no LLM key is configured.
+    """
+    settings = get_settings()
+
+    # Get or create session
+    if session_id not in _sessions:
+        _sessions[session_id] = []
+
+    # Add user message to history
+    _sessions[session_id].append(
+        ChatMessage(
+            role="user",
+            content=message,
+            timestamp=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        )
+    )
+
+    # Try LLM-powered response
+    if settings.llm_api_key and settings.llm_provider == "anthropic":
+        try:
+            response = await _chat_with_anthropic(message, session_id, location)
+            return response
+        except Exception as exc:
+            logger.error("LLM chat failed: %s — falling back to rule-based", exc)
+
+    # Fallback: rule-based responder
+    response = await _rule_based_chat(message, session_id, location)
+    return response
+
+
+async def _chat_with_anthropic(
+    message: str,
+    session_id: str,
+    location: dict | None,
+) -> ChatResponse:
+    """Use Anthropic Claude for tool-calling chat."""
+    import anthropic
+
+    settings = get_settings()
+    client = anthropic.Anthropic(api_key=settings.llm_api_key)
+
+    # Build messages (keep last 10 turns for context)
+    history = _sessions.get(session_id, [])[-10:]
+    messages = [{"role": m.role, "content": m.content} for m in history]
+
+    # Add location context if provided
+    if location:
+        messages[-1]["content"] += (
+            f"\n\n[User's current location: {location.get('lat', 'unknown')}°N, "
+            f"{location.get('lon', 'unknown')}°E]"
+        )
+
+    # Convert our tool definitions to Anthropic format
+    anthropic_tools = [
+        {
+            "name": t["name"],
+            "description": t["description"],
+            "input_schema": t["parameters"],
+        }
+        for t in TOOLS
+    ]
+
+    tool_calls_made = []
+    max_tool_rounds = 5
+
+    for round_num in range(max_tool_rounds):
+        response = client.messages.create(
+            model=settings.llm_model,
+            max_tokens=1024,
+            system=SYSTEM_PROMPT,
+            tools=anthropic_tools,
+            messages=messages,
+        )
+
+        # Check if the model wants to use tools
+        tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
+
+        if not tool_use_blocks:
+            # No tool calls — extract text response
+            text_blocks = [b.text for b in response.content if hasattr(b, "text")]
+            reply = "\n".join(text_blocks) or "I'm sorry, I couldn't generate a response."
+            break
+
+        # Execute tool calls
+        messages.append({"role": "assistant", "content": response.content})
+
+        tool_results = []
+        for tool_block in tool_use_blocks:
+            result = await execute_tool(tool_block.name, tool_block.input)
+            tool_calls_made.append(
+                ToolCallInfo(
+                    tool_name=tool_block.name,
+                    arguments=tool_block.input,
+                    result_summary=json.dumps(result)[:200],
+                )
+            )
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tool_block.id,
+                "content": json.dumps(result),
+            })
+
+        messages.append({"role": "user", "content": tool_results})
+    else:
+        reply = "I've gathered the data. Let me summarize what I found."
+
+    # Store assistant response
+    _sessions[session_id].append(
+        ChatMessage(
+            role="assistant",
+            content=reply,
+            timestamp=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        )
+    )
+
+    return ChatResponse(
+        reply=reply,
+        session_id=session_id,
+        tool_calls_made=tool_calls_made,
+        data_citations=[tc.tool_name for tc in tool_calls_made],
+    )
+
+
+async def _rule_based_chat(
+    message: str,
+    session_id: str,
+    location: dict | None,
+) -> ChatResponse:
+    """
+    Fallback rule-based responder when no LLM key is configured.
+
+    Uses pattern matching to route queries to the right tools
+    and constructs a response from the data.
+    """
+    message_lower = message.lower()
+    tool_calls = []
+    reply_parts = []
+
+    lat = location.get("lat", 9.93) if location else 9.93
+    lon = location.get("lon", 76.27) if location else 76.27
+
+    # Pattern: fishing/PFZ query
+    if any(word in message_lower for word in ["fish", "pfz", "catch", "where"]):
+        result = await execute_tool("get_pfz_zones", {
+            "min_lat": lat - 3, "max_lat": lat + 3,
+            "min_lon": lon - 3, "max_lon": lon + 3,
+        })
+        tool_calls.append(ToolCallInfo(
+            tool_name="get_pfz_zones",
+            arguments={"region": "near user"},
+            result_summary=f"{result.get('total', 0)} PFZ candidates found",
+        ))
+
+        candidates = result.get("candidates", [])
+        if candidates:
+            reply_parts.append(f"🐟 I found **{len(candidates)} Potential Fishing Zones** near your area:\n")
+            for i, c in enumerate(candidates[:3], 1):
+                centroid = c.get("centroid", {})
+                reply_parts.append(
+                    f"  {i}. **{c['zone_id']}** — Score: {c['score']:.2f} ({c['confidence']}), "
+                    f"Location: {centroid.get('lat', 0):.2f}°N {centroid.get('lon', 0):.2f}°E, "
+                    f"SST: {c.get('mean_sst', 'N/A')}°C, Chl-a: {c.get('mean_chl_a', 'N/A')} mg/m³"
+                )
+        else:
+            reply_parts.append("No PFZ candidates found in the area right now.")
+
+    # Pattern: weather/safety query
+    if any(word in message_lower for word in ["weather", "safe", "wave", "wind", "condition"]):
+        result = await execute_tool("get_weather_at", {"lat": lat, "lon": lon})
+        tool_calls.append(ToolCallInfo(
+            tool_name="get_weather_at",
+            arguments={"lat": lat, "lon": lon},
+            result_summary=f"Sea state: {result.get('sea_state', 'unknown')}",
+        ))
+
+        reply_parts.append(
+            f"\n🌊 **Current conditions** at ({lat:.2f}°N, {lon:.2f}°E):\n"
+            f"  • Waves: {result.get('wave_height_m', 'N/A')}m\n"
+            f"  • Wind: {result.get('wind_speed_kmh', 'N/A')} km/h\n"
+            f"  • Sea state: {result.get('sea_state', 'N/A')}\n"
+            f"  • SST: {result.get('sst_celsius', 'N/A')}°C"
+        )
+
+    # Pattern: route query
+    if any(word in message_lower for word in ["route", "go to", "navigate", "path", "how to reach"]):
+        # Default destination: first PFZ if available
+        dest_lat, dest_lon = lat + 0.5, lon - 0.5
+        result = await execute_tool("compute_route", {
+            "origin_lat": lat, "origin_lon": lon,
+            "dest_lat": dest_lat, "dest_lon": dest_lon,
+        })
+        tool_calls.append(ToolCallInfo(
+            tool_name="compute_route",
+            arguments={"origin": f"{lat},{lon}", "dest": f"{dest_lat},{dest_lon}"},
+            result_summary=f"Distance: {result.get('total_distance_km', 'N/A')}km",
+        ))
+
+        reply_parts.append(
+            f"\n🗺️ **Route computed:**\n"
+            f"  • Distance: {result.get('total_distance_km', 'N/A')} km\n"
+            f"  • Est. time: {result.get('estimated_time_hours', 'N/A')} hours\n"
+            f"  • Safe: {'✅ Yes' if result.get('is_safe') else '⚠️ Caution needed'}"
+        )
+        if result.get("warnings"):
+            reply_parts.append(f"  • Warnings: {', '.join(result['warnings'])}")
+
+    # Pattern: alert/cyclone query
+    if any(word in message_lower for word in ["alert", "cyclone", "danger", "warning", "disaster"]):
+        result = await execute_tool("get_active_alerts", {})
+        tool_calls.append(ToolCallInfo(
+            tool_name="get_active_alerts",
+            arguments={},
+            result_summary=f"{result.get('total_alerts', 0)} alerts active",
+        ))
+
+        total = result.get("total_alerts", 0)
+        if total > 0:
+            reply_parts.append(f"\n⚠️ **{total} active alert(s):**")
+            for c in result.get("cyclones", []):
+                reply_parts.append(
+                    f"  • {c['name']} — Center: {c['center']['lat']:.1f}°N, "
+                    f"{c['center']['lon']:.1f}°E, Radius: {c['radius_km']}km"
+                )
+        else:
+            reply_parts.append("\n✅ No active cyclone or disaster alerts in the Indian Ocean region.")
+
+    # Default response
+    if not reply_parts:
+        reply_parts.append(
+            "👋 I'm ORCA, your marine safety assistant. I can help you with:\n"
+            "• **Finding fishing zones** — \"Where should I fish today?\"\n"
+            "• **Weather conditions** — \"Is it safe to go out?\"\n"
+            "• **Route planning** — \"Route from Kochi to [location]\"\n"
+            "• **Alerts** — \"Any cyclone warnings?\"\n"
+            "• **Geofence checks** — \"Am I near the IMBL?\"\n\n"
+            "What would you like to know?"
+        )
+
+    reply = "\n".join(reply_parts)
+
+    _sessions[session_id].append(
+        ChatMessage(role="assistant", content=reply, timestamp=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
+    )
+
+    return ChatResponse(
+        reply=reply,
+        session_id=session_id,
+        tool_calls_made=tool_calls,
+        data_citations=[tc.tool_name for tc in tool_calls],
+    )
