@@ -74,7 +74,11 @@ class MarineWeatherAgent(AgentBase[MarineWeatherData]):
         # 1. Try Copernicus Marine (Primary waves + currents + sea level)
         if settings.has_copernicus_credentials:
             try:
-                data = await self._fetch_copernicus_weather(settings, bbox, lat, lon)
+                import asyncio
+                data = await asyncio.wait_for(
+                    self._fetch_copernicus_weather(settings, bbox, lat, lon),
+                    timeout=20.0,
+                )
                 if data and data.conditions:
                     logger.info(
                         "Fetched %d conditions from Copernicus Marine Service (waves + currents)",
@@ -83,7 +87,7 @@ class MarineWeatherAgent(AgentBase[MarineWeatherData]):
                     return data
             except Exception as exc:
                 logger.warning(
-                    "Copernicus Marine weather fetch failed: %s — falling back to Open-Meteo",
+                    "Copernicus Marine weather fetch failed or timed out: %s — falling back to Open-Meteo",
                     exc,
                 )
 

@@ -59,13 +59,17 @@ class SSTChlorophyllAgent(AgentBase[SSTChlorophyllData]):
         # 1. Try Copernicus Marine (Primary absolute SST)
         if self._settings.has_copernicus_credentials:
             try:
-                sst_data = await self._fetch_sst_copernicus(bbox)
+                import asyncio
+                sst_data = await asyncio.wait_for(
+                    self._fetch_sst_copernicus(bbox),
+                    timeout=20.0,
+                )
                 logger.info(
                     "Fetched %d SST points from Copernicus Marine Service", len(sst_data)
                 )
             except Exception as exc:
                 logger.warning(
-                    "Copernicus Marine SST fetch failed: %s — falling back to ERDDAP", exc
+                    "Copernicus Marine SST fetch failed or timed out: %s — falling back to ERDDAP", exc
                 )
 
         # 2. Fallback to NOAA OISST via ERDDAP
