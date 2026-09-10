@@ -3,13 +3,21 @@ import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import StatusDot from './StatusDot'
 import { useHealthStore } from '../../store/healthStore'
+import { useSOSStore } from '../../store/sosStore'
+import { AlertOctagon } from 'lucide-react'
 
 export default function Navbar() {
   const { t } = useTranslation()
   const location = useLocation()
   const overallStatus = useHealthStore((s) => s.overallStatus)
+  const signals = useSOSStore((s) => s.signals)
 
   const isMapPage = location.pathname === '/map'
+  const isDarkNav = isMapPage
+
+  const activeSOSCount = signals.filter(
+    (s) => s.status === 'active' || s.status === 'acknowledged'
+  ).length
 
   const links = [
     { to: '/map', label: t('nav.liveMap') },
@@ -21,11 +29,16 @@ export default function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 ${isMapPage
-          ? 'bg-charcoal-900/90 backdrop-blur-md'
+      className={`fixed top-0 left-0 right-0 z-50 ${
+        isDarkNav
+          ? 'bg-charcoal-900/95 backdrop-blur-md'
           : 'bg-cream-100/90 backdrop-blur-md'
-        }`}
-      style={{ borderBottom: isMapPage ? '1px solid rgba(255,255,255,0.08)' : '1px solid #EDE6D8' }}
+      }`}
+      style={{
+        borderBottom: isDarkNav
+          ? '1px solid rgba(255,255,255,0.08)'
+          : '1px solid #EDE6D8',
+      }}
     >
       <div className="max-w-content mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
         {/* Logo */}
@@ -34,12 +47,21 @@ export default function Navbar() {
             <span className="text-white font-bold text-sm font-sans">O</span>
           </div>
           <span
-            className={`text-base font-semibold tracking-tight font-sans ${isMapPage ? 'text-cream-100' : 'text-charcoal-900'
-              }`}
+            className={`text-base font-semibold tracking-tight font-sans ${
+              isDarkNav ? 'text-cream-100' : 'text-charcoal-900'
+            }`}
           >
             ORCA
           </span>
-          <StatusDot status={overallStatus === 'healthy' ? 'live' : overallStatus === 'degraded' ? 'mock' : 'error'} />
+          <StatusDot
+            status={
+              overallStatus === 'healthy'
+                ? 'live'
+                : overallStatus === 'degraded'
+                ? 'mock'
+                : 'error'
+            }
+          />
         </Link>
 
         {/* Center links */}
@@ -48,26 +70,47 @@ export default function Navbar() {
             <Link
               key={link.to}
               to={link.to}
-              className={`text-sm font-medium no-underline transition-colors ${location.pathname === link.to
-                  ? isMapPage
-                    ? 'text-cream-100'
-                    : 'text-charcoal-900'
-                  : isMapPage
-                    ? 'text-cream-400 hover:text-cream-100'
-                    : 'text-cream-400 hover:text-charcoal-900'
-                }`}
+              className={`text-sm font-medium no-underline transition-colors ${
+                location.pathname === link.to
+                  ? isDarkNav
+                    ? 'text-cream-100 font-semibold'
+                    : 'text-charcoal-900 font-semibold'
+                  : isDarkNav
+                  ? 'text-cream-400 hover:text-cream-100'
+                  : 'text-cream-400 hover:text-charcoal-900'
+              }`}
             >
               {link.label}
             </Link>
           ))}
+
+          {/* Admin Distress Monitor Link */}
+          <Link
+            to="/admin"
+            className={`text-sm font-medium no-underline flex items-center gap-2 transition-colors ${
+              location.pathname.startsWith('/admin')
+                ? 'text-charcoal-900 font-semibold'
+                : isDarkNav
+                ? 'text-cream-400 hover:text-cream-100'
+                : 'text-cream-400 hover:text-charcoal-900'
+            }`}
+          >
+            <span>Distress Monitor</span>
+            {activeSOSCount > 0 && (
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+              </span>
+            )}
+          </Link>
         </div>
 
         {/* CTA */}
         <Link
           to="/map"
           className={`text-sm font-medium px-5 py-2.5 rounded-md no-underline transition-all ${isMapPage
-              ? 'bg-terracotta-500 text-white hover:bg-terracotta-600'
-              : 'bg-charcoal-900 text-cream-100 hover:bg-charcoal-800'
+            ? 'bg-terracotta-500 text-white hover:bg-terracotta-600'
+            : 'bg-charcoal-900 text-cream-100 hover:bg-charcoal-800'
             }`}
         >
           {t('nav.openMap')}

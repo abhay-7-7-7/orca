@@ -93,6 +93,7 @@ def create_app() -> FastAPI:
     _try_include(app, "backend.api.routes.routing", prefix="/api/routing")
     _try_include(app, "backend.api.routes.chatbot", prefix="/api/chatbot")
     _try_include(app, "backend.api.routes.language", prefix="/api/language")
+    _try_include(app, "backend.api.routes.sos", prefix="/api/sos")
 
     return app
 

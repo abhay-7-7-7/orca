@@ -9,6 +9,7 @@ const resources = {
       nav: {
         liveMap: 'Live Map',
         chat: 'Chat',
+        admin: 'Admin SOS',
         about: 'About',
         openMap: 'Open Live Map',
       },

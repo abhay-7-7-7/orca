@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import Landing from './pages/Landing'
 import MapDashboard from './pages/MapDashboard'
 import Chat from './pages/Chat'
+import AdminSOS from './pages/AdminSOS'
 import Navbar from './components/common/Navbar'
 import FloatingChatButton from './components/common/FloatingChatButton'
 import ChatOverlay from './components/chatbot/ChatOverlay'
@@ -26,6 +27,8 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/map" element={<MapDashboard />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/admin" element={<AdminSOS />} />
+        <Route path="/admin/sos" element={<AdminSOS />} />
       </Routes>
       {!isChatPage && <FloatingChatButton />}
       {!isChatPage && <ChatOverlay />}
