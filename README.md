@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="./docs/assets/ORCA_Banner.jpg" alt="ORCA - Marine Ecosystem Reasoning with Collaborative Agents" width="100%" style="border-radius: 12px; max-height: 380px; object-fit: cover;" />
-</p>
+
 
 <p align="center">
   <a href="#license-and-acknowledgments"><img src="https://img.shields.io/badge/license-Apache_2.0-007ec6?style=flat" alt="License Apache 2.0" /></a>
