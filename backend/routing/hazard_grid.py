@@ -53,6 +53,15 @@ class HazardGrid:
         # Cost grid — initialized to base cost (1.0 = open water, no hazard)
         self.cost_grid = np.ones((self.ny, self.nx), dtype=np.float64)
 
+        # Land mask: mark all mainland/island land cells as impassable
+        from backend.routing.land_mask import is_land
+        for i in range(self.ny):
+            lat_val = float(self.lats[i])
+            for j in range(self.nx):
+                lon_val = float(self.lons[j])
+                if is_land(lat_val, lon_val):
+                    self.cost_grid[i, j] = float("inf")
+
         # Component grids for debugging/explanation
         self.wave_cost = np.zeros((self.ny, self.nx))
         self.wind_cost = np.zeros((self.ny, self.nx))
