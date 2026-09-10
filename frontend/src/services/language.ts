@@ -93,23 +93,21 @@ export async function translateText(
   })
 }
 
-export async function speechToText(audioBlob: Blob): Promise<ASRResult> {
+export async function speechToText(audioBlob: Blob, language = ''): Promise<ASRResult> {
   // Backend ASRRequest expects JSON: { audio_base64, source_language, audio_format }
-  // NOT FormData — convert blob to base64 first
   const base64Audio = await blobToBase64(audioBlob)
-  const audioFormat = audioBlob.type.includes('webm') ? 'webm' : 'ogg'
 
   const raw = await apiPost<BackendASRResponse>('/api/language/asr', {
     audio_base64: base64Audio,
-    source_language: '',  // auto-detect
-    audio_format: audioFormat,
+    source_language: language,
+    audio_format: 'wav',
   })
 
   return {
-    text: raw.text,
-    language: raw.detected_language,
-    language_code: raw.detected_language,
-    confidence: raw.confidence,
+    text: (raw?.text || '').trim(),
+    language: raw?.detected_language || language || 'en',
+    language_code: raw?.detected_language || language || 'en',
+    confidence: raw?.confidence ?? 0,
   }
 }
 

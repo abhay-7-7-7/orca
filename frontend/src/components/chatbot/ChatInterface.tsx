@@ -31,7 +31,20 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
   const clearMessages = useChatStore((s) => s.clearMessages)
 
   const { send } = useChatStream()
-  const { startRecording, stopRecording, getAnalyserData } = useVoiceInput()
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null)
+
+  const {
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    getAnalyserData,
+    interimTranscript,
+    voiceError,
+  } = useVoiceInput({
+    onTranscriptChange: (liveText) => {
+      if (liveText) setInput(liveText)
+    },
+  })
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -42,6 +55,7 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
     const msg = text || input
     if (!msg.trim() || isLoading) return
     if (!text) setInput('')
+    setVoiceNotice(null)
     await send(msg)
   }
 
@@ -53,14 +67,30 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
   }
 
   const handleVoice = async () => {
+    setVoiceNotice(null)
     if (isRecording) {
-      const text = await stopRecording()
-      if (text) {
-        setInput(text)
-        await send(text)
+      try {
+        const text = await stopRecording()
+        const finalText = (text || input).trim()
+        if (finalText) {
+          setInput(finalText)
+          await handleSend(finalText)
+        } else {
+          setVoiceNotice('No speech detected. Please try speaking again.')
+          setTimeout(() => setVoiceNotice(null), 4000)
+        }
+      } catch (err) {
+        console.error('Stop voice error:', err)
       }
     } else {
-      await startRecording()
+      try {
+        setInput('')
+        await startRecording()
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Could not access microphone.'
+        setVoiceNotice(msg)
+        setTimeout(() => setVoiceNotice(null), 4000)
+      }
     }
   }
 
@@ -177,10 +207,28 @@ export default function ChatInterface({ mode }: ChatInterfaceProps) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Voice notice / error toast */}
+      {(voiceNotice || voiceError) && (
+        <div className="px-4 py-2 bg-amber-50 border-t border-amber-200 text-amber-800 text-xs flex items-center justify-between flex-shrink-0">
+          <span>{voiceNotice || voiceError}</span>
+          <button
+            type="button"
+            onClick={() => setVoiceNotice(null)}
+            className="text-amber-600 hover:text-amber-900 font-bold ml-2 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Voice indicator */}
       {isRecording && (
         <div className="px-4 py-2.5 border-t border-cream-200 flex-shrink-0 bg-red-50/50">
-          <VoiceIndicator getAnalyserData={getAnalyserData} />
+          <VoiceIndicator
+            getAnalyserData={getAnalyserData}
+            interimTranscript={interimTranscript}
+            onCancel={cancelRecording}
+          />
         </div>
       )}
 
