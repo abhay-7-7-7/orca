@@ -14,8 +14,10 @@ Architecture: `User → Language Layer → Chatbot → Fusion Layer ← 8 Agents
 
 | Agent | Provider | Signup URL | Tier | Env Var(s) | Rate Limit Notes | Status |
 |---|---|---|---|---|---|---|
-| SST/Chlorophyll | NOAA ERDDAP | None needed | Public domain | — | No formal limit; be reasonable | **LIVE** |
-| Marine Weather | Open-Meteo | None needed | Free (non-commercial) | — | 10,000 req/day | **LIVE** |
+| SST/Chlorophyll (Primary SST) | Copernicus Marine | [marine.copernicus.eu](https://marine.copernicus.eu) | Free account (no volume/bandwidth quota) | `COPERNICUSMARINE_SERVICE_USERNAME`, `COPERNICUSMARINE_SERVICE_PASSWORD` | No quota; official Python toolbox | **LIVE** (`thetao` DOI: 10.48670/moi-00016) |
+| SST/Chlorophyll (Fallback SST + Chl) | NOAA ERDDAP | None needed | Public domain | — | No formal limit; be reasonable | **LIVE** |
+| Marine Weather (Primary Waves/Currents) | Copernicus Marine | [marine.copernicus.eu](https://marine.copernicus.eu) | Free account (no volume/bandwidth quota) | `COPERNICUSMARINE_SERVICE_USERNAME`, `COPERNICUSMARINE_SERVICE_PASSWORD` | No quota; official Python toolbox | **LIVE** (Waves DOI: 10.48670/moi-00017) |
+| Marine Weather (Fallback / Wind) | Open-Meteo | None needed | Free (non-commercial) | — | 10,000 req/day | **LIVE** |
 | Cyclone/Disaster | GDACS | None needed | Free public feeds | — | Reasonable use | **LIVE** |
 | Tide | Harmonic model | None needed | Self-computed | — | N/A | **LIVE** |
 | Geofence (EEZ) | MarineRegions | [marineregions.org](https://marineregions.org) | Free download | — | Static shapefile | **LIVE** |
@@ -230,9 +232,15 @@ The Fusion Layer is the **only** thing that knows about all agents. The Routing 
 | Bathymetry | **SYNTHETIC** | Distance-from-coast depth model | GEBCO GeoTIFF real depth data |
 
 **Free-tier quota risks during demo:**
+- **Copernicus Marine Service**: **Zero volume/bandwidth quota** confirmed in official documentation.
 - **Open-Meteo**: 10,000 requests/day — unlikely to hit during a demo
 - **GDACS**: no formal rate limit
 - **ERDDAP**: public, but large bbox queries can be slow (>5s)
+
+**Critical Edge Cases & Technical Notes:**
+- **SST Anomaly vs. Absolute SST**: The dataset `cmems_mod_glo_phy_anfc_0.083deg-sst-anomaly_P1D-m` contains *deviations from historical climatology*, NOT absolute water temperature. **It must never be used for PFZ thermal front detection**, as feeding anomalies into gradient calculations produces false convergence zones. The system strictly uses `cmems_mod_glo_phy-thetao_anfc_0.083deg_PT6H-i` (`thetao` at surface level) for true physical SST.
+- **Surface Currents in Hazard-Cost Routing**: Surface currents (`cmems_mod_glo_phy_anfc_merged-uv_PT1H-i`) are factored into the A* hazard-cost grid with a weight of $w=1.5$. A 2.0-knot opposing head-current increases cell traversal cost by $+2.0$ (comparable to a moderate 2.5m wave height penalty), while a following tail-current awards a fuel/speed discount up to $-0.3$.
+- **Salinity**: Sea water salinity (`cmems_mod_glo_phy-so_anfc_0.083deg_PT6H-i`) is exposed in `MarineConditions.salinity_psu` as available-but-unused (no routing or agent currently requires salinity).
 
 ---
 
