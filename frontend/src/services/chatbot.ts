@@ -14,6 +14,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   tool_calls?: ToolCall[]
+  suggested_followups?: string[]
   location?: { lat: number; lon: number; label?: string }
   route_id?: string
   timestamp: string
@@ -23,6 +24,7 @@ export interface ChatResponse {
   message: ChatMessage
   session_id: string
   detected_language?: string
+  suggested_followups?: string[]
   locations?: { lat: number; lon: number; label?: string; zoom?: number }[]
   context?: {
     last_location?: { lat: number; lon: number; label?: string }
@@ -51,27 +53,19 @@ interface BackendChatResponse {
   data_citations?: string[]
   language_detected?: string
   locations?: { lat: number; lon: number; label?: string; zoom?: number }[]
+  suggested_followups?: string[]
 }
 
 /* ---------- Adapters ---------- */
 
 /**
- * Map a backend tool-call label to a human-friendly display icon.
- */
-function toolIcon(_toolName: string): string {
-  return ''
-}
-
-/**
  * Transform the backend ChatResponse into the shape expected by frontend components.
- * Backend: { reply, session_id, tool_calls_made, data_citations, language_detected }
- * Frontend: { message: ChatMessage, session_id, detected_language, context }
  */
 function adaptChatResponse(backend: BackendChatResponse): ChatResponse {
   const toolCalls: ToolCall[] = (backend.tool_calls_made || []).map((tc) => ({
     tool: tc.tool_name,
     label: tc.tool_name.replace(/_/g, ' '),
-    icon: toolIcon(tc.tool_name),
+    icon: '',
     result_summary: tc.result_summary || '',
     data: tc.arguments,
   }))
@@ -80,6 +74,7 @@ function adaptChatResponse(backend: BackendChatResponse): ChatResponse {
     role: 'assistant',
     content: backend.reply,
     tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+    suggested_followups: backend.suggested_followups,
     timestamp: new Date().toISOString(),
   }
 
@@ -88,9 +83,7 @@ function adaptChatResponse(backend: BackendChatResponse): ChatResponse {
     session_id: backend.session_id,
     detected_language: backend.language_detected,
     locations: backend.locations,
-    // Context extraction from response is not provided by backend —
-    // context chips are handled by the frontend's useChatStream hook
-    // based on the message content
+    suggested_followups: backend.suggested_followups,
   }
 }
 

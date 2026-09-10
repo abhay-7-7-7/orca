@@ -10,6 +10,7 @@ Falls back to a rule-based responder when no LLM key is configured.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from typing import Optional
 
@@ -121,7 +122,6 @@ Any storm alerts today?
 """
 
 
-import re
 
 def _extract_followups(reply: str) -> tuple[str, list[str]]:
     """Extract follow-up suggestions from [FOLLOWUPS]...[/FOLLOWUPS] block.
@@ -331,12 +331,15 @@ async def _chat_with_mistral(
         )
     )
 
+    clean_reply, followups = _extract_followups(reply)
+
     return ChatResponse(
-        reply=reply,
+        reply=clean_reply,
         session_id=session_id,
         tool_calls_made=tool_calls_made,
         data_citations=[tc.tool_name for tc in tool_calls_made],
         locations=_extract_locations(tool_calls_made),
+        suggested_followups=followups,
     )
 
 
@@ -425,12 +428,15 @@ async def _chat_with_anthropic(
         )
     )
 
+    clean_reply, followups = _extract_followups(reply)
+
     return ChatResponse(
-        reply=reply,
+        reply=clean_reply,
         session_id=session_id,
         tool_calls_made=tool_calls_made,
         data_citations=[tc.tool_name for tc in tool_calls_made],
         locations=_extract_locations(tool_calls_made),
+        suggested_followups=followups,
     )
 
 
@@ -555,10 +561,24 @@ async def _rule_based_chat(
         ChatMessage(role="assistant", content=reply, timestamp=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
     )
 
+    # Generate hardcoded follow-ups for rule-based responses
+    rule_followups = []
+    if any(w in message_lower for w in ["fish", "pfz", "catch", "where"]):
+        rule_followups = ["Check weather there", "Plan safe route", "Any storm alerts?"]
+    elif any(w in message_lower for w in ["weather", "wave", "wind", "tide"]):
+        rule_followups = ["Find fishing zones nearby", "Plan safe route", "Check boundary status"]
+    elif any(w in message_lower for w in ["route", "navigate", "go", "sail"]):
+        rule_followups = ["Check weather along route", "Find fish along route", "Any alerts?"]
+    elif any(w in message_lower for w in ["alert", "cyclone", "danger"]):
+        rule_followups = ["Find safe fishing zones", "Plan safe route", "Check local weather"]
+    else:
+        rule_followups = ["Find fishing zones near Kochi", "Check weather", "Any storm alerts?"]
+
     return ChatResponse(
         reply=reply,
         session_id=session_id,
         tool_calls_made=tool_calls,
         data_citations=[tc.tool_name for tc in tool_calls],
         locations=_extract_locations(tool_calls),
+        suggested_followups=rule_followups,
     )

@@ -12,7 +12,6 @@ export function useChatStream() {
     setLoading,
     setDetectedLanguage,
     setMapTarget,
-    addContextChip,
   } = useChatStore()
 
   const send = useCallback(
@@ -41,8 +40,12 @@ export function useChatStream() {
         // Send to chatbot
         const response = await sendMessage(text, sessionId)
 
-        // Add assistant message
-        addMessage(response.message)
+        // Build the assistant message with follow-ups attached
+        const assistantMessage: ChatMessage = {
+          ...response.message,
+          suggested_followups: response.suggested_followups,
+        }
+        addMessage(assistantMessage)
 
         // Auto-navigate map to the first location from the response
         if (response.locations && response.locations.length > 0) {
@@ -59,25 +62,6 @@ export function useChatStream() {
           }
         }
 
-        // Update context chips from response
-        if (response.context?.last_location) {
-          addContextChip({
-            id: 'location',
-            type: 'location',
-            label: `📍 ${response.context.last_location.label || `${response.context.last_location.lat.toFixed(2)}, ${response.context.last_location.lon.toFixed(2)}`}`,
-            data: response.context.last_location as unknown as Record<string, unknown>,
-          })
-        }
-
-        if (response.context?.last_route_id) {
-          addContextChip({
-            id: 'route',
-            type: 'route',
-            label: `🗺️ Route: ${response.context.last_route_id}`,
-            data: { route_id: response.context.last_route_id },
-          })
-        }
-
         if (response.detected_language) {
           setDetectedLanguage(response.detected_language)
         }
@@ -92,7 +76,7 @@ export function useChatStream() {
         setLoading(false)
       }
     },
-    [sessionId, addMessage, setLoading, setDetectedLanguage, setMapTarget, addContextChip]
+    [sessionId, addMessage, setLoading, setDetectedLanguage, setMapTarget]
   )
 
   return { messages, send, isLoading: useChatStore.getState().isLoading }
