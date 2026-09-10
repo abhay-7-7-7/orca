@@ -1,3 +1,4 @@
+import React from 'react'
 import { CircleMarker, Popup, Polygon } from 'react-leaflet'
 import { useMapStore } from '../../store/mapStore'
 import { useRouteStore } from '../../store/routeStore'
@@ -26,7 +27,7 @@ export default function PFZLayer() {
   return (
     <>
       {pfzZones.map((zone) => (
-        <div key={zone.id}>
+        <React.Fragment key={zone.id}>
           {/* If polygon data exists, render polygon */}
           {zone.polygon && zone.polygon.length > 2 ? (
             <Polygon
@@ -61,7 +62,7 @@ export default function PFZLayer() {
               </Popup>
             </CircleMarker>
           )}
-        </div>
+        </React.Fragment>
       ))}
     </>
   )

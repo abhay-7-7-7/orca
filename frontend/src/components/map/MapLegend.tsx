@@ -1,21 +1,31 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMapStore } from '../../store/mapStore'
+import { useRouteStore } from '../../store/routeStore'
 
 export default function MapLegend() {
   const [collapsed, setCollapsed] = useState(false)
   const layers = useMapStore((s) => s.layers)
+  const dashboardOpen = useRouteStore((s) => s.dashboardOpen)
+  const activeRoute = useRouteStore((s) => s.activeRoute)
+  const selectedPFZ = useMapStore((s) => s.selectedPFZ)
+
+  const hasDashboardContent = Boolean(activeRoute || selectedPFZ)
 
   return (
-    <div className="absolute bottom-6 left-4 z-[1000]">
+    <div
+      className={`absolute bottom-6 z-[1000] transition-all duration-300 ${
+        dashboardOpen && hasDashboardContent ? 'right-[404px]' : 'right-4'
+      }`}
+    >
       <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-cream-300 overflow-hidden min-w-[220px] max-w-[260px]">
-        {/* Header */}
+        {/* Header — word 'OpenSeaMap' removed, clean 'Map Legend' */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-semibold text-charcoal-900 bg-cream-50/80 hover:bg-cream-100/80 transition-colors border-b border-cream-200"
+          className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs font-semibold text-charcoal-900 bg-cream-50/80 hover:bg-cream-100/80 transition-colors border-b border-cream-200 cursor-pointer"
         >
           <span className="flex items-center gap-1.5">
-            <span className="text-sm">🧭</span> OpenSeaMap Legend
+            <span className="text-sm">🧭</span> Map Legend
           </span>
           <svg
             width="14"
@@ -107,8 +117,8 @@ export default function MapLegend() {
                   <span>ORCA Navigational Route</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-red-500">⚠️</span>
-                  <span>Severe Wave / Hazard Alert</span>
+                  <span className="text-xs">🌊</span>
+                  <span>Rough Swell Surge (&gt;2.2m Train)</span>
                 </div>
               </div>
             </motion.div>
