@@ -3,6 +3,7 @@ import { useChatStore } from '../store/chatStore'
 import { sendMessage } from '../services/chatbot'
 import { detectLanguage } from '../services/language'
 import type { ChatMessage } from '../services/chatbot'
+import { cleanMarkdown, extractFollowupsFromText } from '../components/chatbot/MessageBubble'
 
 export function useChatStream() {
   const {
@@ -40,10 +41,18 @@ export function useChatStream() {
         // Send to chatbot
         const response = await sendMessage(text, sessionId)
 
-        // Build the assistant message with follow-ups attached
+        // Ensure follow-ups are extracted and content is cleaned
+        const rawContent = response.message.content || ''
+        const extractedFollowups = extractFollowupsFromText(rawContent)
+        const finalFollowups = (response.suggested_followups && response.suggested_followups.length > 0)
+          ? response.suggested_followups
+          : (extractedFollowups.length > 0 ? extractedFollowups : ['Check local weather', 'Plan safe sea route', 'Check boundary status'])
+
+        // Build the assistant message with follow-ups attached and clean content
         const assistantMessage: ChatMessage = {
           ...response.message,
-          suggested_followups: response.suggested_followups,
+          content: cleanMarkdown(rawContent),
+          suggested_followups: finalFollowups,
         }
         addMessage(assistantMessage)
 
