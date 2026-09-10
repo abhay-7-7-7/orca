@@ -107,8 +107,10 @@ export default function MapControls() {
               </svg>
             </button>
           </div>
-          x``        {/* Origin Input */}
-          <div className="mb-3">
+        </div>
+
+        {/* Origin Input */}
+        <div className="mb-3">
             <div className="flex items-center justify-between mb-1">
               <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                 Origin (Harbor)
