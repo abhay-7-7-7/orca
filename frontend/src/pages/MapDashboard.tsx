@@ -2,19 +2,21 @@ import { useEffect } from 'react'
 import MapView from '../components/map/MapView'
 import MapControls from '../components/map/MapControls'
 import DashboardPanel from '../components/dashboard/DashboardPanel'
+import ChatBar from '../components/chatbot/ChatBar'
 import { useWorldState } from '../hooks/useWorldState'
 import { useRouteStore } from '../store/routeStore'
 import { useMapStore } from '../store/mapStore'
-import { useHealthStore } from '../store/healthStore'
+import { useChatStore } from '../store/chatStore'
 
 export default function MapDashboard() {
   useWorldState()
 
   const loading = useMapStore((s) => s.loading)
+  const setView = useMapStore((s) => s.setView)
   const activeRoute = useRouteStore((s) => s.activeRoute)
   const dashboardOpen = useRouteStore((s) => s.dashboardOpen)
   const setDashboardOpen = useRouteStore((s) => s.setDashboardOpen)
-  const agents = useHealthStore((s) => s.agents)
+  const mapTarget = useChatStore((s) => s.mapTarget)
 
   // Auto-open dashboard when route is computed
   useEffect(() => {
@@ -23,7 +25,19 @@ export default function MapDashboard() {
     }
   }, [activeRoute, setDashboardOpen])
 
-  const mockAgents = agents.filter((a) => a.status === 'mock')
+  // Bridge: when chat sets a mapTarget, fly the main map there
+  useEffect(() => {
+    if (
+      mapTarget &&
+      Number.isFinite(Number(mapTarget.lat)) &&
+      Number.isFinite(Number(mapTarget.lon))
+    ) {
+      const zoom = Number.isFinite(Number(mapTarget.zoom))
+        ? Number(mapTarget.zoom)
+        : 10
+      setView([Number(mapTarget.lat), Number(mapTarget.lon)], zoom)
+    }
+  }, [mapTarget, setView])
 
   return (
     <div className="fixed inset-0 pt-16">
@@ -34,24 +48,15 @@ export default function MapDashboard() {
         </div>
       )}
 
-      {/* Mock agents badge */}
-      {mockAgents.length > 0 && (
-        <div className="absolute top-20 right-4 z-[1001]">
-          <div className="bg-amber-50/95 backdrop-blur-md border border-amber-200 rounded-lg px-3 py-2 shadow-sm">
-            <p className="text-[10px] text-amber-700 flex items-center gap-1.5">
-              <span className="status-dot mock" />
-              {mockAgents.length} agent{mockAgents.length > 1 ? 's' : ''} using demo data
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Map */}
       <div className="w-full h-full relative">
         <MapView />
         <MapControls />
         <DashboardPanel />
       </div>
+
+      {/* Floating chat bar */}
+      <ChatBar />
     </div>
   )
 }
