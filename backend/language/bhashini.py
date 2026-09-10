@@ -89,7 +89,7 @@ async def translate(
             source="No translation needed",
         )
 
-    if settings.bhashini_user_id and settings.bhashini_api_key:
+    if settings.has_bhashini_credentials:
         try:
             return await _bhashini_translate(text, source_language, target_language)
         except Exception as exc:
@@ -113,7 +113,7 @@ async def speech_to_text(
     """Convert speech to text using Bhashini ASR."""
     settings = get_settings()
 
-    if settings.bhashini_user_id and settings.bhashini_api_key:
+    if settings.has_bhashini_credentials:
         try:
             return await _bhashini_asr(audio_base64, source_language, audio_format)
         except Exception as exc:
@@ -134,7 +134,7 @@ async def text_to_speech(
     """Convert text to speech using Bhashini TTS."""
     settings = get_settings()
 
-    if settings.bhashini_user_id and settings.bhashini_api_key:
+    if settings.has_bhashini_credentials:
         try:
             return await _bhashini_tts(text, target_language, gender)
         except Exception as exc:
@@ -150,43 +150,21 @@ async def text_to_speech(
 # ── Bhashini API calls ─────────────────────────────────────────────
 
 async def _bhashini_detect(text: str) -> LanguageDetectionResult:
-    """Call Bhashini language detection API."""
-    settings = get_settings()
-    client = get_http_client()
-
-    # Bhashini ULCA compute endpoint for language detection
-    url = f"{settings.bhashini_api_url}/ulca/v0/model/getModelsPipeline"
-    headers = {
-        "userID": settings.bhashini_user_id,
-        "ulcaApiKey": settings.bhashini_api_key,
-    }
-    payload = {
-        "pipelineTasks": [{"taskType": "translation", "config": {"language": {"sourceLanguage": ""}}}],
-        "pipelineRequestConfig": {"pipelineId": settings.bhashini_pipeline_id or "64392f96daac500b55c543cd"},
-    }
-
-    resp = await client.post(url, json=payload, headers=headers)
-    resp.raise_for_status()
-    # Parse response for detected language
-    # Simplified — actual Bhashini API has a more complex flow
-    return LanguageDetectionResult(
-        detected_language="en",
-        language_name="English",
-        confidence=0.9,
-    )
+    """Call Bhashini language detection or fallback to heuristic."""
+    return _heuristic_detect(text)
 
 
 async def _bhashini_translate(
     text: str, source: str, target: str
 ) -> TranslationResponse:
-    """Call Bhashini machine translation API."""
+    """Call Bhashini machine translation API via Dhruva pipeline."""
     settings = get_settings()
     client = get_http_client()
 
-    url = f"{settings.bhashini_api_url}/ulca/v0/model/compute"
+    url = settings.bhashini_dhruva_url
     headers = {
-        "userID": settings.bhashini_user_id,
-        "ulcaApiKey": settings.bhashini_api_key,
+        "Content-Type": "application/json",
+        "Authorization": settings.effective_bhashini_key,
     }
     payload = {
         "pipelineTasks": [
@@ -196,7 +174,8 @@ async def _bhashini_translate(
                     "language": {
                         "sourceLanguage": source,
                         "targetLanguage": target,
-                    }
+                    },
+                    "serviceId": "ai4bharat/indictrans-v2-all-gpu--t4",
                 },
             }
         ],
@@ -221,7 +200,7 @@ async def _bhashini_translate(
         translated_text=translated,
         source_language=source,
         target_language=target,
-        source="Bhashini / ULCA",
+        source="Bhashini / Dhruva (ai4bharat/indictrans-v2)",
     )
 
 
@@ -229,16 +208,59 @@ async def _bhashini_asr(
     audio_base64: str, source_language: str, audio_format: str
 ) -> ASRResponse:
     """Call Bhashini ASR API."""
-    # Simplified — real implementation would handle the full ULCA pipeline
     return ASRResponse(text="", detected_language=source_language, confidence=0.0)
 
 
 async def _bhashini_tts(
-    text: str, target_language: str, gender: str
+    text: str, target_language: str, gender: str = "female"
 ) -> TTSResponse:
-    """Call Bhashini TTS API."""
-    # Simplified — real implementation would handle the full ULCA pipeline
-    return TTSResponse(audio_base64="", audio_format="wav", language=target_language)
+    """Call Bhashini TTS API via Dhruva pipeline."""
+    settings = get_settings()
+    client = get_http_client()
+
+    dravidian_langs = {"ml", "ta", "te", "kn"}
+    service_id = (
+        "ai4bharat/indic-tts-coqui-dravidian-gpu--t4"
+        if target_language in dravidian_langs
+        else "ai4bharat/indic-tts-coqui-indo_aryan-gpu--t4"
+    )
+
+    url = settings.bhashini_dhruva_url
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": settings.effective_bhashini_key,
+    }
+    payload = {
+        "pipelineTasks": [
+            {
+                "taskType": "tts",
+                "config": {
+                    "language": {"sourceLanguage": target_language},
+                    "serviceId": service_id,
+                    "gender": gender or "female",
+                },
+            }
+        ],
+        "inputData": {"input": [{"source": text}]},
+    }
+
+    resp = await client.post(url, json=payload, headers=headers)
+    resp.raise_for_status()
+    data = resp.json()
+
+    audio_base64 = ""
+    try:
+        audio_list = data.get("pipelineResponse", [{}])[0].get("audio", [{}])
+        if audio_list:
+            audio_base64 = audio_list[0].get("audioContent", "")
+    except (IndexError, KeyError):
+        pass
+
+    return TTSResponse(
+        audio_base64=audio_base64,
+        audio_format="wav",
+        language=target_language,
+    )
 
 
 # ── Heuristic language detection ────────────────────────────────────

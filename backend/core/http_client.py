@@ -61,13 +61,11 @@ def get_http_client() -> httpx.AsyncClient:
     """
     Get the shared HTTP client.
 
-    Raises RuntimeError if called before ``init_http_client()``.
+    Auto-initializes if called before ``init_http_client()``.
     """
+    global _client
     if _client is None:
-        raise RuntimeError(
-            "HTTP client not initialized. "
-            "Ensure init_http_client() is called during app startup."
-        )
+        _client = _build_client()
     return _client
 
 
